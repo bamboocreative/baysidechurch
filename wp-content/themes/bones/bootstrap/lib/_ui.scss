@@ -1,0 +1,110 @@
+//
+// Custom UI & component CSS
+// --------------------------------------------------
+
+a{
+	@include transition(color $transitionTime);
+	
+	&:hover{
+		text-decoration: none;
+	}
+}
+
+img{
+	max-width: 100%;
+}
+
+
+#campus-map {
+	// Makes the maps prettier
+	
+	// Fixes ruined Google Maps controls
+	img{
+		max-width: inherit;
+	}
+}
+
+// EVENTS
+
+.events-outer{
+	margin-top: 40px;
+}
+
+.event-wrapper{
+	
+	.calendar{
+		background: $gray-light;
+		height: 140px;
+		width: 140px;
+		float: left;	
+		margin-top: 8px;
+		margin-bottom: 1px;
+		margin-right: $grid-gutter-width;
+	}
+	
+	h1{
+		margin: 0px;
+		font-size: 2.2em;
+		a{
+			color: $brand-darker;
+			&:hover{
+				text-decoration: none;
+				color: darken($brand-darker, 10%);
+				
+			}
+		}
+	}	
+	table.event-details{
+		margin: 10px 0px;
+		// width: 100%;	
+		tr{
+		}	
+		td{
+			padding-right: 50px;
+			.fa{
+				color: $brand-detail;
+				font-size: 1.1em;
+			}
+		}
+	}
+	
+	.event-content{
+		margin-bottom: 50px;
+	}
+}
+
+
+
+
+// CAMPUS HOMEPAGE
+.no-touch{
+	.campus-header-wrapper{
+		background-attachment: fixed;
+	}
+}
+
+.campus-header-wrapper{
+	background-position: center center;
+	background-size: cover;
+	background-repeat: no-repeat;
+	
+	table{
+		width: 100%;
+		td.campus-logo{
+			height: 300px;
+			text-align: center;
+			vertical-align: middle;
+			img{
+				width: 100%;
+				max-width: 800px;
+			}
+		}
+	}
+}
+
+// BADGES 
+
+.badge-wrapper{
+	background: $brand-primary;
+	padding: 50px 0px;
+}
