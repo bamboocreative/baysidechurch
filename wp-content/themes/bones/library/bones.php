@@ -5,6 +5,158 @@ Developed by: Garrett Boatman
 URL: http://bamboocreative.com/
 */
 
+
+function displayEvents($category, $notIn, $limit, $handle){
+	// Array key's == custom field names
+	$events = getEvents($category, $notIn, $limit, $handle);
+	if($events){
+		foreach($events as $events){ ?>
+			<?php 
+			$trimmed_content = wp_trim_words( $events['content'], 30, '... <a href="'. $events['permalink'] .'">Read More</a>' );
+			$startTime = date('g:ia', $events['date']);
+			$endTime = date('g:ia', $events['end_date']);
+			$feat_image = wp_get_attachment_url( get_post_thumbnail_id($events['id']) );
+			$startDate = date('M. j, Y', $events['date']);
+			$endDate = date('M. j, Y', $events['end_date']);
+			
+			if($startDate == $endDate){
+				$date = $startDate;
+			} else{
+				$date = $startDate . ' - ' . $endDate;
+			}
+			$location = $events['custom_location_name'];
+			$cost = $events['cost'];
+			if($startTime !== $endTime){
+				if($endTime !== '12:00am'){
+					$time = $startTime . ' - ' . $endTime;
+				} else{
+					$time = $startTime;
+				}
+				
+			} else{
+				$time = $startTime;
+			}
+			if($time == '12:00am'){
+				$time = 'All Day';
+			}
+			if(!$location){
+				$location = 'Bayside Church';
+			}
+			if(!$cost){
+				$cost ='Free';
+			}
+			?>
+			<div class="event-wrapper">
+				<div class="row">
+					<div class="col-md-12">
+						<a href="<?php the_permalink() ?>">
+							<?php if($feat_image){?>
+							<div class="calendar image"><img src="<?php echo $feat_image; ?>"></div>
+							<?php } else{ ?>
+							<div class="calendar">
+								<table>
+									<tr class="month"><td><?php echo date('M', $events['date']); ?></td></tr>
+									<tr class="day"><td><div class="date-text"><?php echo date('j', $events['date']); ?></div></td></tr>
+								</table>
+							</div>	
+							<?php } ?>
+						</a>
+						
+						<h1><a href="<?php echo $events['permalink']; ?>"><?php echo $events['title']; ?></a></h1>
+						<table class="event-details">
+							<tr>
+								<td><i class="fa fa-calendar-o"></i><?php echo $date ?></td>
+								<td><i class="fa fa-clock-o"></i><?php echo $time; ?></td>
+								<td><i class="fa fa-map-marker"></i><?php echo $location ?></td>
+								<td><i class="fa fa-usd"></i><?php echo $cost ?></td>
+							</tr>
+						</table>
+						<p class="event-content">
+							<?php echo $trimmed_content;?>
+						</p>
+					</div>
+				</div>
+			</div>
+			<?php 
+		}
+	}
+}
+
+function getEvents($category, $notIn, $limit, $handle){
+
+	$categoryHandler = 'category__' . $handle;
+	
+	$categories = array();
+	// ToDo: NOT DONE
+	
+	if($category){
+		foreach($category as $cat){
+			$categories[] = get_cat_ID( $cat );
+		}
+	}
+	
+	// Arguments for the events query
+	$args = array(
+		'posts_per_page' => $limit,
+		'post_type' => 'event',
+		//Customizable for categories
+		$categoryHandler => $categories,
+		'category__not_in' => array( get_cat_ID($notIn), get_cat_ID('hidden') ),
+
+		// Orders the events by date
+		'meta_key' => 'date',
+		'orderby' => 'meta_value_num',
+		'order' => 'ASC',
+		// Query post if the event's end date is greater than the current time.
+		'meta_query' => array(
+			array(
+				'key' => 'end_date',
+				'value' => $currentTime,
+				'type' => 'numeric',
+				'compare' => '>='
+			)
+		)
+	);
+	
+	// Sets up the events array
+	$events = array();
+	$the_query = new WP_Query( $args );
+	if ( $the_query->have_posts() ) {
+		while ( $the_query->have_posts() ) {
+			// Setting up post data
+			$the_query->the_post();	
+			// Multidimentional array for 
+			$events[] = array(
+				'id' => get_the_id(),
+				'title' => get_the_title(),
+				'content' => get_the_content(),
+				'permalink' => get_permalink(),
+				'all_day' => get_field('all_day'),
+				'badge_activation_date' => get_field('badge_activation_date'),
+				'badge_deactive_date' => get_field('badge_deactive_date'),
+				'contact' => get_field('contact'),
+				'contact?_' => get_field('contact?_'),
+				'contact_email_address' => get_field('contact_email_address'),
+				'date' => get_field('date'),
+				'end_date' => get_field('end_date'),
+				'end_time' => get_field('end_time'),
+				'event_badge' => get_field('event_badge'),
+				'location' => get_field('location'),
+				'multi-date' => get_field('multi-date'),
+				'registration' => get_field('registration'),
+				'registration_link' => get_field('registration_link'),
+				'start_time' => get_field('start_time'), 
+				'custom_location_name' => get_field('custom_location_name'), 
+				'cost' => get_field('cost')
+				
+			);
+		}
+		return $events;
+	}
+	/* Restore original Post Data */
+	wp_reset_postdata();
+}
+
 // This function handles all badge related items (EVENT)
 function getEventBadges($limit){
 	$currentTime = time(void);
@@ -45,9 +197,6 @@ function getEventBadges($limit){
 	
 	if ( $the_query->have_posts() ) {
 		
-		// Creating the array that will be returned.
-		$URLarray = array();
-		
 		// Loop through ($limit) badges.
 		while ( $the_query->have_posts() ) {
 			
@@ -59,81 +208,16 @@ function getEventBadges($limit){
 
 			// Builds the array of URLs.
 			// $URLarray[] = date('m d y', $dateString);
-			$URLarray[] = get_field('event_badge');
+			$URLarray[] = array(
+				'image' => get_field('event_badge'), 
+				'permalink' => get_permalink()
+			);
 		}
 		// Returns the badges
 		return $URLarray;
 	}
 	/* Restore original Post Data */
 	wp_reset_postdata();
-}
-
-function getEvents($category, $notIn){
-
-	// Arguments for the events query
-	$args = array(
-		'post_type' => 'event',
-		//Customizable for categories
-		'category_name' => $category,
-		'category__not_in' => array( get_catid($notIn), get_catid('hidden') ),
-
-		// Orders the events by date
-		'meta_key' => 'date',
-		'orderby' => 'meta_value_num',
-		'order' => 'ASC',
-		// Query post if the event's end date is greater than the current time.
-		'meta_query' => array(
-			array(
-				'key' => 'end_date',
-				'value' => $currentTime,
-				'type' => 'numeric',
-				'compare' => '>='
-			)
-		)
-	);
-	
-	// Sets up the events array
-	$events = array();
-	$the_query = new WP_Query( $args );
-	if ( $the_query->have_posts() ) {
-		while ( $the_query->have_posts() ) {
-			// Setting up post data
-			$the_query->the_post();	
-			// Multidimentional array for 
-			$events[] = array(
-				'title' => get_the_title(),
-				'content' => get_the_content(),
-				'permalink' => get_permalink(),
-				'all_day' => get_field('all_day'),
-				'badge_activation_date' => get_field('badge_activation_date'),
-				'badge_deactive_date' => get_field('badge_deactive_date'),
-				'contact' => get_field('contact'),
-				'contact?_' => get_field('contact?_'),
-				'contact_email_address' => get_field('contact_email_address'),
-				'date' => get_field('date'),
-				'end_date' => get_field('end_date'),
-				'end_time' => get_field('end_time'),
-				'event_badge' => get_field('event_badge'),
-				'location' => get_field('location'),
-				'multi-date' => get_field('multi-date'),
-				'registration' => get_field('registration'),
-				'registration_link' => get_field('registration_link'),
-				'start_time' => get_field('start_time'), 
-				'custom_location_name' => get_field('custom_location_name'), 
-				'cost' => get_field('cost')
-				
-			);
-		}
-		return $events;
-	}
-	/* Restore original Post Data */
-	wp_reset_postdata();
-}
-
-function get_catid($cat){
-	$category = get_category_by_slug( $cat );						
-	$category =  (array) $category;
-	return $category['cat_ID'];
 }
 	
 // This takes the ID of a blog & returns the current URL replaced with the prober blog's subdomain.

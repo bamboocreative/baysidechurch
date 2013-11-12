@@ -2,6 +2,12 @@
 // Custom UI & component CSS
 // --------------------------------------------------
 
+* { 
+	-webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+	-moz-box-sizing: border-box;    /* Firefox, other Gecko */
+	box-sizing: border-box;         /* Opera/IE 8+ */
+}
+
 a{
 	@include transition(color $transitionTime);
 	
@@ -32,14 +38,73 @@ img{
 
 .event-wrapper{
 	
-	.calendar{
-		background: $gray-light;
-		height: 140px;
-		width: 140px;
-		float: left;	
-		margin-top: 8px;
-		margin-bottom: 1px;
-		margin-right: $grid-gutter-width;
+	a{
+		&:hover{
+			.calendar{
+				background: #fafafa;
+				
+				.month{
+					background: darken($brand-danger, 5%);
+				}
+			}
+		}
+		
+		.calendar{
+			
+			@media (max-width: $screen-desktop){
+				float: none;
+			}
+			
+			height: 140px;
+			width: 140px;
+			float: left;	
+			margin-top: 8px;
+			margin-bottom: 1px;
+			margin-right: $grid-gutter-width;
+			text-align: center;
+			@include transition(background $transitionTime);
+			
+			&.image{
+				border: none;
+				.day{
+					border: none;
+				}
+			}
+			
+			table{
+				width: 100%;
+				height: 100%;
+				tr{
+					td{
+						text-align: center;
+					}
+				}
+				.month{
+					font-weight: 900;
+					text-transform: uppercase;
+					height: 30%;
+					background: $brand-danger;
+					color: #fff;
+					font-size: 1.1em;
+					border: 1px solid $brand-danger;
+					@include transition(background $transitionTime);
+					
+				}
+				.day{
+					font-weight: 200;
+					font-size: 4em;
+					line-height: .5em;
+					vertical-align: middle;
+					color: $gray-light;
+					border: 1px solid $gray-lighter;
+					padding-bottom: 10px;
+					.date-text{
+						margin-bottom: 10px;
+					}
+				}
+			}
+			
+		}
 	}
 	
 	h1{
@@ -56,25 +121,52 @@ img{
 	}	
 	table.event-details{
 		margin: 10px 0px;
+		
 		// width: 100%;	
 		tr{
-		}	
-		td{
-			padding-right: 50px;
-			.fa{
-				color: $brand-detail;
-				font-size: 1.1em;
+			td{
+				.fa-calendar-o, .fa-clock-o, .fa-map-marker, .fa-usd{
+					padding-right: 10px;
+				}
+
+				
+				@media (max-width: $screen-desktop){
+					
+					display: block !important;
+					
+					.fa-calendar-o, .fa-clock-o, .fa-map-marker, .fa-usd{
+						width: 30px;
+						padding-right: 0px;
+					}
+									
+					.fa-clock-o{
+						padding-left: 1px;
+					}
+					
+					.fa-map-marker{
+						padding-left: 4px;
+					}
+					
+					.fa-usd{
+						padding-left: 4px;
+					}
+					
+				}
+				
+				padding-right: 50px;
+				.fa{
+					color: $brand-detail;
+					font-size: 1.1em;
+				}
 			}
-		}
+		}	
+		
 	}
 	
 	.event-content{
 		margin-bottom: 50px;
 	}
 }
-
-
-
 
 // CAMPUS HOMEPAGE
 .no-touch{
@@ -106,5 +198,21 @@ img{
 
 .badge-wrapper{
 	background: $brand-primary;
-	padding: 50px 0px;
+	padding: 20px 0px;
+}
+
+// FOOTER
+footer.footer{
+	background: $brand-darker;
+	color: #fff;
+	padding: 20px 0px;
+}
+
+// PAGE
+.header-image{
+	min-height: 250px;
+	background-size: auto 250px;
+	background-position: center center;
+	background-repeat: no-repeat;
+	margin-bottom: 30px;
 }

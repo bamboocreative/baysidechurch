@@ -58,7 +58,7 @@ abbr[title] {
 
 b,
 strong {
-  font-weight: bold; }
+  font-weight: 500; }
 
 dfn {
   font-style: italic; }
@@ -5675,6 +5675,14 @@ td.visible-print {
   th.hidden-print,
   td.hidden-print {
     display: none !important; } }
+* {
+  -webkit-box-sizing: border-box;
+  /* Safari/Chrome, other WebKit */
+  -moz-box-sizing: border-box;
+  /* Firefox, other Gecko */
+  box-sizing: border-box;
+  /* Opera/IE 8+ */ }
+
 a {
   -webkit-transition: color 0.3s;
   transition: color 0.3s; }
@@ -5690,14 +5698,52 @@ img {
 .events-outer {
   margin-top: 40px; }
 
-.event-wrapper .calendar {
-  background: #999999;
+.event-wrapper a:hover .calendar {
+  background: #fafafa; }
+  .event-wrapper a:hover .calendar .month {
+    background: #ee3938; }
+.event-wrapper a .calendar {
   height: 140px;
   width: 140px;
   float: left;
   margin-top: 8px;
   margin-bottom: 1px;
-  margin-right: 20px; }
+  margin-right: 20px;
+  text-align: center;
+  -webkit-transition: background 0.3s;
+  transition: background 0.3s; }
+  @media (max-width: 992px) {
+    .event-wrapper a .calendar {
+      float: none; } }
+  .event-wrapper a .calendar.image {
+    border: none; }
+    .event-wrapper a .calendar.image .day {
+      border: none; }
+  .event-wrapper a .calendar table {
+    width: 100%;
+    height: 100%; }
+    .event-wrapper a .calendar table tr td {
+      text-align: center; }
+    .event-wrapper a .calendar table .month {
+      font-weight: 900;
+      text-transform: uppercase;
+      height: 30%;
+      background: #f0504f;
+      color: #fff;
+      font-size: 1.1em;
+      border: 1px solid #f0504f;
+      -webkit-transition: background 0.3s;
+      transition: background 0.3s; }
+    .event-wrapper a .calendar table .day {
+      font-weight: 200;
+      font-size: 4em;
+      line-height: .5em;
+      vertical-align: middle;
+      color: #999999;
+      border: 1px solid #eeeeee;
+      padding-bottom: 10px; }
+      .event-wrapper a .calendar table .day .date-text {
+        margin-bottom: 10px; }
 .event-wrapper h1 {
   margin: 0px;
   font-size: 2.2em; }
@@ -5708,9 +5754,23 @@ img {
       color: #21446c; }
 .event-wrapper table.event-details {
   margin: 10px 0px; }
-  .event-wrapper table.event-details td {
+  .event-wrapper table.event-details tr td {
     padding-right: 50px; }
-    .event-wrapper table.event-details td .fa {
+    .event-wrapper table.event-details tr td .fa-calendar-o, .event-wrapper table.event-details tr td .fa-clock-o, .event-wrapper table.event-details tr td .fa-map-marker, .event-wrapper table.event-details tr td .fa-usd {
+      padding-right: 10px; }
+    @media (max-width: 992px) {
+      .event-wrapper table.event-details tr td {
+        display: block !important; }
+        .event-wrapper table.event-details tr td .fa-calendar-o, .event-wrapper table.event-details tr td .fa-clock-o, .event-wrapper table.event-details tr td .fa-map-marker, .event-wrapper table.event-details tr td .fa-usd {
+          width: 30px;
+          padding-right: 0px; }
+        .event-wrapper table.event-details tr td .fa-clock-o {
+          padding-left: 1px; }
+        .event-wrapper table.event-details tr td .fa-map-marker {
+          padding-left: 4px; }
+        .event-wrapper table.event-details tr td .fa-usd {
+          padding-left: 4px; } }
+    .event-wrapper table.event-details tr td .fa {
       color: #e86a1f;
       font-size: 1.1em; }
 .event-wrapper .event-content {
@@ -5735,4 +5795,16 @@ img {
 
 .badge-wrapper {
   background: #00aeef;
-  padding: 50px 0px; }
+  padding: 20px 0px; }
+
+footer.footer {
+  background: #2d5d93;
+  color: #fff;
+  padding: 20px 0px; }
+
+.header-image {
+  min-height: 250px;
+  background-size: auto 250px;
+  background-position: center center;
+  background-repeat: no-repeat;
+  margin-bottom: 30px; }

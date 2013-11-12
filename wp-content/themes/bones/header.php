@@ -55,16 +55,16 @@
 									<img class="logo" src="<?php echo get_template_directory_uri(); ?>/library/images/bayside-white.svg">
 								</td>
 								<td>
+									<select>
 									<?php // This runs through all oft he blogs and returns custom links. Check out "theNewURL()" in bones.php
-									/* Warning: the get_blog_list() function is currently deprecated as of 3.6.1 with no replacement, 
-									although it will not be removed in future versions. It is safe to use. */
-									
-									$blog_list = get_blog_list( 0, 'all', true);
+									$blog_list = wp_get_sites();
 									//Todo:: SORT MY BLOG NUMBER
 									foreach ($blog_list as $blog) {
 										$blogID = $blog['blog_id'];	
-										echo '<a href="' . theNewURL($blogID) . '">' . theNewURL($blogID) . '</a> ';
+										// echo '<a href="' . theNewURL($blogID) . '">' . theNewURL($blogID) . '</a> ';
+										echo '<option>'. theNewURL($blogID) .'</option>';
 									}?>
+									</select>
 								</td>
 							</tr>
 						</table>

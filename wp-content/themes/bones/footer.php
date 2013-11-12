@@ -1,15 +1,13 @@
-			<footer class="footer container" role="contentinfo">
-
-				<div id="inner-footer" class="wrap clearfix">
-
-					<nav role="navigation">
-							<?php bones_footer_links(); ?>
-					</nav>
-
-					<!-- <p class="source-org copyright">&copy; <?php echo date('Y'); ?> <?php bloginfo( 'name' ); ?>.</p> -->
-
-				</div> <?php // end #inner-footer ?>
-
+			<footer class="footer" role="contentinfo">
+				<div class="container">
+					<div id="inner-footer" class="wrap clearfix">
+	
+						<?php bloginfo('name'); ?>
+	
+						<!-- <p class="source-org copyright">&copy; <?php echo date('Y'); ?> <?php bloginfo( 'name' ); ?>.</p> -->
+	
+					</div> <?php // end #inner-footer ?>
+				</div>
 			</footer> <?php // end footer ?>
 
 		</div> <?php // end #container ?>

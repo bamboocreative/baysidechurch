@@ -36,8 +36,8 @@ Template Name: Campus Home
 										} ?>
 										<?php 
 										$location = get_field('campus_location');
-										$coordinates = $location['coordinates']; 
-										echo $location['address']; 
+										if($location){$coordinates = $location['coordinates'];}
+										if($coordinates){echo $location['address'];}
 										?>	
 										
 										<!-- Inception loop for services -->
@@ -69,79 +69,24 @@ Template Name: Campus Home
 									<?php $badges = getEventBadges(4); ?>
 									
 									<?php if($badges){ ?>
-									<?php foreach($badges as $badges){
+									<?php foreach($badges as $badge){
 										echo '<div class="col-md-3 col-sm-6">';
-										echo '<img class="event-badge" src="' . $badges .  '">';
+										echo '<a href="' . $badge['permalink'] . '"><img class="event-badge" src="' . $badge['image'] .  '"></a>';
 										echo '</div>';
 									}?>
 									<?php } ?>
 									</div>
 								</div>
 							</div>
-						
-							
-							<?php 
-							
-							function displayEvents($category, $notIn){
-								// Array key's == custom field names
-								$events = getEvents($category, $notIn);
-								if($events){
-									foreach($events as $events){ ?>
-										<?php 
-										$trimmed_content = wp_trim_words( $events['content'], 40, '... <a href="'. $events['permalink'] .'">Read More</a>' );
-										$startTime = date('g:ia', $events['date']);
-										$endTime = date('g:ia', $events['end_date']);
-										$location = $events['custom_location_name'];
-										$cost = $events['cost'];
-										if($startTime !== $endTime){
-											$time = $startTime . ' - ' . $endTime;
-										} else{
-											$time = $startTime;
-										}
-										if($time == '12:00am'){
-											$time = 'All Day';
-										}
-										if(!$location){
-											$location = 'Bayside Church';
-										}
-										if(!$cost){
-											$cost ='Free';
-										}
-										?>
-										<div class="event-wrapper">
-											<div class="row">
-												<div class="col-md-12">
-													<div class="calendar"></div>
-													<h1><a href="<?php $events['permalink']; ?>"><?php echo $events['title']; ?></a></h1>
-													<table class="event-details">
-														<tr>
-															<td><i class="fa fa-calendar-o"></i> &nbsp; <?php echo date('F j, Y', $events['date']); ?></td>
-															<td><i class="fa fa-clock-o"></i> &nbsp; <?php echo $time; ?></td>
-															<td><i class="fa fa-map-marker"></i> &nbsp; <?php echo $location ?></td>
-															<td><i class="fa fa-usd"></i> &nbsp; <?php echo $cost ?></td>
-														</tr>
-													</table>
-													<p class="event-content">
-													<?php
-													echo $trimmed_content;
-													?>
-													</p>
-												</div>
-											</div>
-										</div>
-										<?php 
-									}
-								}
-							}?>
 							
 							<div class="events-outer container">
 							<?php 
-							displayEvents('featured','');
-							displayEvents('','featured');
+							// Defined in bones.php
+							displayEvents(array('homepage', 'featured'),'', 9999, 'and');
+							displayEvents(array('homepage'),'featured', 10, 'in');
 							?>
 							</div>
 														
-							
 							</article> <?php // end article ?>
 
 							<?php endwhile; else : ?>

@@ -30,8 +30,43 @@ date_default_timezone_set('America/Los_Angeles');
 	- custom google+ integration
 	- adding custom fields to user profiles
 */
+
 require_once( 'library/bones.php' ); // if you remove this, bones will break
+
+
+// Includes custom post types for all sites using the theme.
+include 'ACF/customPosts/post-events.php';
+include 'ACF/customPosts/post-videos.php';
+
+
+// Includes custom fields for all sites using the theme.
+include 'ACF/customFields/campus.php';
+include 'ACF/customFields/event.php';
+include 'ACF/customFields/video.php';
+
+
+// This removes the comments and Media menu items
+function wpse28782_remove_menu_items(){
+	remove_menu_page('edit-comments.php');
+	remove_menu_page('upload.php');
+}
+
+
+// Custom CSS for the Admin Dashboard
+function custom_css() {
+   echo '<style type="text/css">
+           .acf_postbox .field select{width: auto;}
+           input.hasDatepicker{width:auto !important;}
+         </style>';
+}
+
+add_action( 'admin_menu', 'wpse28782_remove_menu_items' );
+add_action('admin_head', 'custom_css');
+
+
 /*
+
+
 
 3. library/admin.php
 	- removing some default WordPress dashboard widgets

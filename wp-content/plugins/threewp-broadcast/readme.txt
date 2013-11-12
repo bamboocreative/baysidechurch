@@ -4,8 +4,8 @@ Donate link: http://plainview.se/donate/
 License: GPLv3
 Requires at least: 3.3.1
 Stable tag: trunk
-Tags: broadcast, multipost, duplicate, posts, sitepress, threewp, linking, posts, multiple, blogs
-Tested up to: 3.6.1
+Tags: broadcast, multipost, duplicate, posts, sitepress, threewp, linking, posts, multiple, blogs, woocommerce, wpml
+Tested up to: 3.7.1
 
 Network plugin for PHP v5.4+ to broadcast posts to other blogs in the network. Custom post types, taxonomies, attachments and WPML are supported.
 
@@ -20,6 +20,7 @@ Network plugin for PHP v5.4 to broadcast posts to other blogs in the network. Br
 * Attached images
 * Featured images
 * Galleries
+* Woocommerce support (add "product" as a custom post type to broadcast)
 * WPML support
 
 Broadcasted posts can be linked to their parents, which updates child posts when the parent post is updated. This includes all data: title, slug, content, custom fields, attachments, etc.
@@ -42,6 +43,8 @@ The <a href="http://plainview.se/wordpress/threewp-broadcast-premium-pack/" titl
 
 For a complete list of features and more information, see <a href="http://plainview.se/wordpress/threewp-broadcast-premium-pack/" title="Premium Pack's page on the web"><em>Broadcast Premium Pack</em>'s page on the web</a>. Currently the Premium Pack offers:
 
+* <strong>Advanced Custom Fields</strong> adds support for correctly broadcasting image field types using the ACF plugin.
+* <strong>Local Links</strong> automatically updates links to local posts on each child blog.
 * <strong>Queue</strong> adds a broadcast queue which helps to broadcast posts to tens / hundreds / more blogs.
 * <strong>Send To Many</strong> broadcasts many posts to several blogs at once, instead of individually editing and broadcasting each post.
 * <strong>User & Blog Settings</strong> can hide the broadcast meta box and/or menu, modify the meta box to force/prevent broadcast to blogs, with separate settings for users / blogs / roles.
@@ -92,6 +95,7 @@ Broadcast offers some actions/filters for plugin developers with which to intera
 16. Premium Pack: Showing how to hide Broadcast from the users (Blog & User Settings plugin)
 17. Premium Pack: Showing a modification, info and to whom the modification applies (Blog & User Settings plugin)
 18. Premium Pack: Adding one row of criteria for a modification (Blog & User Settings plugin)
+19. Premium Pack: Advanced Custom Fields image support
 
 == Frequently Asked Questions ==
 
@@ -149,12 +153,6 @@ Make sure that:
 4. The correct post type(s) have been selected
 5. <em>User & Blog Settings</em> is not set to hide the meta box from the user / role / blog
 
-= WPAlchemy =
-
-If you have custom post meta boxes via WPAlchemy, you'll probably need to add the following to the custom field inclusions in the settings:
-
-	_bcc_
-
 = WPML Sitepress =
 
 There is an included plugin, ThreeWP Broadcast WPML, that provides support for transferring WPML translation data between broadcasted posts.
@@ -171,6 +169,19 @@ It works transparently in the background, but in case you've never really used W
 Translated categories and tags are untested as of 2013-07-17.
 
 == Changelog ==
+
+= 2.8 20131109 =
+* New: Attachments are attributed to the original author, instead of the person doing the broadcasting.
+* New: Database maintenace admin tab. Experimental. Make a backup first. Has help text.
+* Code: Broadcast data table has unique row numbers.
+
+= 2.7 20131101 =
+* New: All-links in post overview.
+* New: Linked posts can be deleted, trashed, restored and unlinked.
+* Fix: Settings are ajaxified again.
+* Fix: Group selection works again.
+* Fix: No more warnings when using empty custom field blacklist / whitelists.
+* Advanced Custom Fields plugin is now available in the premium pack.
 
 = 2.6 20131028 =
 * Fix: Broadcasted featured image is attached to post if necessary.
