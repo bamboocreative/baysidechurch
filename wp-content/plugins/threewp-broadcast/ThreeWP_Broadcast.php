@@ -6,7 +6,7 @@ Author URI:		http://www.plainview.se
 Description:	Broadcast / multipost a post, with attachments, custom fields, tags and other taxonomies to other blogs in the network.
 Plugin Name:	ThreeWP Broadcast
 Plugin URI:		http://plainview.se/wordpress/threewp-broadcast/
-Version:		2.8
+Version:		2.10
 */
 
 namespace threewp_broadcast;
@@ -21,7 +21,15 @@ use \threewp_broadcast\broadcast_data\blog;
 class ThreeWP_Broadcast
 	extends \threewp_broadcast\ThreeWP_Broadcast_Base
 {
-	private $broadcasting = false;
+	/**
+		@brief		Broadcasting stack.
+		@details
+
+		An array of broadcasting_data objects, the latest being at the end.
+
+		@since		20131120
+	**/
+	private $broadcasting = [];
 
 	/**
 		@brief	Public property used during the broadcast process.
@@ -76,11 +84,12 @@ class ThreeWP_Broadcast
 	**/
 	public $permalink_cache;
 
-	public $plugin_version = 2.8;
+	public $plugin_version = 2.10;
 
 	protected $sdk_version_required = 20130505;		// add_action / add_filter
 
 	protected $site_options = array(
+		'blogs_to_hide' => 5,								// How many blogs to auto-hide
 		'broadcast_internal_custom_fields' => false,		// Broadcast internal custom fields?
 		'canonical_url' => true,							// Override the canonical URLs with the parent post's.
 		'custom_field_whitelist' => '_wp_page_template _wplp_ _aioseop_',				// Internal custom fields that should be broadcasted.
@@ -162,7 +171,7 @@ class ThreeWP_Broadcast
 			return;
 
 		$this->enqueue_js();
-		wp_enqueue_style( 'threewp_broadcast', '/' . $this->paths[ 'path_from_base_directory' ] . '/css/css.scss.min.css'  );
+		wp_enqueue_style( 'threewp_broadcast', $this->paths[ 'url' ] . '/css/css.scss.min.css'  );
 	}
 
 	// --------------------------------------------------------------------------------------------
@@ -427,6 +436,14 @@ class ThreeWP_Broadcast
 			->size( 5, 5 )
 			->value( $this->get_site_option( 'save_post_priority' ) );
 
+		$blogs_to_hide = $fs->number( 'blogs_to_hide' )
+			->description_( 'In the broadcast meta box, after how many blogs the list should be auto-hidden.' )
+			->label_( 'Blogs to hide' )
+			->min( 1 )
+			->required()
+			->size( 3, 3 )
+			->value( $this->get_site_option( 'blogs_to_hide' ) );
+
 		$save = $form->primary_button( 'save' )
 			->value_( 'Save settings' );
 
@@ -456,6 +473,7 @@ class ThreeWP_Broadcast
 			$this->update_site_option( 'custom_field_whitelist', $whitelist );
 
 			$this->update_site_option( 'save_post_priority', $save_post_priority->get_post_value() );
+			$this->update_site_option( 'blogs_to_hide', $blogs_to_hide->get_post_value() );
 			$this->message( 'Options saved!' );
 		}
 
@@ -691,12 +709,12 @@ class ThreeWP_Broadcast
 		// Broadcast version
 		$row = $table->body()->row();
 		$row->td()->text( 'Broadcast version' );
-		$text = sprintf( '%sVersion %s%s is installed.',
-			sprintf( '<a href="%s">', 'http://wordpress.org/plugins/threewp-broadcast/' ),
-			$this->plugin_version,
-			'</a>'
-		);
-		$row->td()->text( $text );
+		$row->td()->text( $this->plugin_version );
+
+		// PHP version
+		$row = $table->body()->row();
+		$row->td()->text( 'PHP version' );
+		$row->td()->text( phpversion() );
 
 		// SDK version
 		$row = $table->body()->row();
@@ -706,10 +724,7 @@ class ThreeWP_Broadcast
 		);
 		$row->td()->text( $text );
 		$object = new \ReflectionObject( new \plainview\sdk\wordpress\base );
-		$text = sprintf( 'Version %s',
-			$this->sdk_version
-		);
-		$row->td()->text( $text );
+		$row->td()->text( $this->sdk_version );
 
 		// SDK path
 		$row = $table->body()->row();
@@ -744,7 +759,7 @@ class ThreeWP_Broadcast
 				case 'user_delete_all':
 					$tabs->tab( 'user_delete_all' )
 						->heading_( 'Delete all child posts' )
-						->name_( 'Dell all children' );
+						->name_( 'Delete all children' );
 					break;
 				case 'user_find_orphans':
 					$tabs->tab( 'user_find_orphans' )
@@ -1191,6 +1206,10 @@ class ThreeWP_Broadcast
 		$action->meta_box_data = $meta_box_data;
 		$action->apply();
 
+		// Post the form.
+		$meta_box_data->form->post();
+		$meta_box_data->form->use_post_values();
+
 		$broadcasting_data = new broadcasting_data( [
 			'_POST' => $_POST,
 			'meta_box_data' => $meta_box_data,
@@ -1214,15 +1233,6 @@ class ThreeWP_Broadcast
 		$this->activities = array(
 			'3broadcast_broadcasted' => array(
 				'name' => $this->_( 'A post was broadcasted.' ),
-			),
-			'3broadcast_group_added' => array(
-				'name' => $this->_( 'A Broadcast blog group was added.' ),
-			),
-			'3broadcast_group_deleted' => array(
-				'name' => $this->_( 'A Broadcast blog group was deleted.' ),
-			),
-			'3broadcast_group_modified' => array(
-				'name' => $this->_( 'A Broadcast blog group was modified.' ),
 			),
 			'3broadcast_unlinked' => array(
 				'name' => $this->_( 'A post was unlinked.' ),
@@ -1397,6 +1407,7 @@ class ThreeWP_Broadcast
 		{
 			$blogs_input->option( $blog->blogname, $blog->id );
 			$option = $blogs_input->input( 'blogs_' . $blog->id );
+			$option->get_label()->content = $form::unfilter_text( $blog->blogname );
 			if ( $blog->is_disabled() )
 				$option->disabled()->css_class( 'disabled' );
 			if ( $blog->is_linked() )
@@ -1412,15 +1423,8 @@ class ThreeWP_Broadcast
 
 		$meta_box_data->html->put( 'blogs', '' );
 
-		// Advertize the premium plugins.
-		$queue_url = add_query_arg( 'page', 'threewp_broadcast_premium_pack_info', 'admin.php' );
-		$meta_box_data->html->put( 'broadcast_queue', $this->_( '%sQueue%s not available.',
-			sprintf( '<a href="%s" title="%s">',
-				$queue_url,
-				$this->_( 'Information about the Broadcast Queue Plugin' )
-			),
-			'</a>'
-		) );
+		$js = sprintf( '<script type="">var broadcast_blogs_to_hide = %s;</script>', $this->get_site_option( 'blogs_to_hide', 5 ) );
+		$meta_box_data->html->put( 'blogs_js', $js );
 
 		// We require some js.
 		$meta_box_data->js->put( 'threewp_broadcast', $this->paths[ 'url' ] . '/js/user.min.js' );
@@ -1858,8 +1862,10 @@ class ThreeWP_Broadcast
 	**/
 	public function broadcast_post( $broadcasting_data )
 	{
-		$this->broadcasting_data = $broadcasting_data;					// Global copy.
-		$bcd = $this->broadcasting_data;								// Convenience.
+		$bcd = $broadcasting_data;
+
+		// For nested broadcasts. Just in case.
+		switch_to_blog( $bcd->parent_blog_id );
 
 		if ( $bcd->link )
 		{
@@ -1900,6 +1906,10 @@ class ThreeWP_Broadcast
 			$bcd->post_custom_fields = get_post_custom( $bcd->post->ID );
 
 			$bcd->has_thumbnail = isset( $bcd->post_custom_fields[ '_thumbnail_id' ] );
+
+			// Check that the thumbnail ID is > 0
+			$bcd->has_thumbnail = $bcd->has_thumbnail && ( reset( $bcd->post_custom_fields[ '_thumbnail_id' ] ) > 0 );
+
 			if ( $bcd->has_thumbnail )
 			{
 				$bcd->thumbnail_id = $bcd->post_custom_fields[ '_thumbnail_id' ][0];
@@ -1949,8 +1959,10 @@ class ThreeWP_Broadcast
 		$to_broadcasted_blog_details = []; 		// Array of blog and post IDs that we're broadcasting to. To be used for the activity monitor action.
 
 		// To prevent recursion
-		$this->broadcasting = true;
-		unset( $_POST[ 'broadcast' ] );
+		array_push( $this->broadcasting, $bcd );
+
+		// POST is no longer needed. Remove it so that other plugins don't use it.
+		unset( $_POST );
 
 		$action = new actions\broadcasting_started;
 		$action->broadcasting_data = $bcd;
@@ -2244,6 +2256,9 @@ class ThreeWP_Broadcast
 			$child_blog->switch_from();
 		}
 
+		// For nested broadcasts. Just in case.
+		restore_current_blog();
+
 		// Save the post broadcast data.
 		if ( $bcd->link )
 			$this->set_post_broadcast_data( $bcd->parent_blog_id, $bcd->post->ID, $broadcast_data );
@@ -2253,8 +2268,7 @@ class ThreeWP_Broadcast
 		$action->apply();
 
 		// Finished broadcasting.
-		$this->broadcasting = false;
-		$this->broadcasting_data = null;
+		array_pop( $this->broadcasting );
 
 		$this->load_language();
 
@@ -2366,7 +2380,7 @@ class ThreeWP_Broadcast
 	{
 		if ( isset( $this->_js_enqueued ) )
 			return;
-		wp_enqueue_script( 'threewp_broadcast', '/' . $this->paths[ 'path_from_base_directory' ] . '/js/user.min.js' );
+		wp_enqueue_script( 'threewp_broadcast', $this->paths[ 'url' ] . '/js/user.min.js' );
 		$this->_js_enqueued = true;
 	}
 
@@ -2495,7 +2509,7 @@ class ThreeWP_Broadcast
 	*/
 	public function is_broadcasting()
 	{
-		return $this->broadcasting !== false;
+		return count( $this->broadcasting ) > 0;
 	}
 
 	/**

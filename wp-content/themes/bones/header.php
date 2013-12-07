@@ -11,7 +11,7 @@
 		<?php // Google Chrome Frame for IE ?>
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
-		<title><?php wp_title(''); ?></title>
+		<title><?php wp_title('Bayside' . ' ' . get_bloginfo('name') . ' |')?></title>
 
 		<?php // mobile meta (hooray!) ?>
 		<meta name="HandheldFriendly" content="True">
@@ -52,7 +52,7 @@
 						<table>
 							<tr>
 								<td>
-									<img class="logo" src="<?php echo get_template_directory_uri(); ?>/library/images/bayside-white.svg">
+									<a href="<?php echo bloginfo('wpurl'); ?>"><img class="logo" src="<?php echo get_template_directory_uri(); ?>/library/images/bayside-white.svg"></a>
 								</td>
 								<td>
 									<select>
@@ -71,9 +71,71 @@
 					</div>
 					
 					<nav class="header">
-				        <div class="container">
-				        <?php bones_main_nav(); ?>
+				        <div class="container mainnav">
+					        <div class="nav top-nav clearfix">
+						        <ul>
+								   <li><a id="about" href="javascript:void(0)">About</a></li>
+								   <li><a id="events" href="javascript:void(0)">Events</a></li>
+								   <li><a id="campuses" href="javascript:void(0)">Campuses</a></li>
+								   <li><a id="ministries" href="javascript:void(0)">Ministries</a></li>
+								   <li><a id="media" href="javascript:void(0)">Media</a></li>
+								   <li><a id="give" href="javascript:void(0)">Give</a></li>
+						        </ul>
+					        </div>
 				        </div>
 				    </nav>	
 				</header> <?php // end header ?>
 			</div>
+			<div class="page-wrapper">
+				<div class="subnav">
+					<div class="subnav-inner">
+						<div class="container">
+							<div class="row">
+								<div class="col-md-3">
+									<h4>Children's</h4>
+									<ul>
+										<li><a href="">8wks-Kindergarten</a></li><!-- 
+										--><li><a href="">1st-4th</a></li><!-- 
+										--><li><a href="">5th & 6th</a></li><!-- 
+										--><li><a href="">Special Needs</a></li><!-- 
+										--><li><a href="">Breakaway Camps</a></li>
+									</ul>
+								</div>
+								<div class="col-md-3">
+									<h4>Student</h4>
+									<ul>
+										<li><a href="">Junior High</a></li><!-- 
+										--><li><a href="">Senior High</a></li><!-- 
+										--><li><a href="">College/20-Somethings</a></li><!-- 
+										--><li><a href="">Special Needs</a></li><!-- 
+										--><li><a href="">Thrive Leadership School</a></li>
+									</ul>
+								</div>
+								<div class="col-md-3">
+									<h4>Adult</h4>
+									<ul>
+										<li><a href="">Men</a></li><!-- 
+										--><li><a href="">Women</a></li><!-- 
+										--><li><a href="">Singles</a></li><!-- 
+										--><li><a href="">Classes</a></li><!-- 
+										--><li><a href="">Marriage & Family</a></li><!--
+										--><li><a href="">Small Groups</a></li><!-- 
+										--><li><a href="">Purposeful Parenting</a></li><!-- 
+										--><li><a href="">Adventure Sports</a></li><!--
+										--><li><a href="">Health and Fitness</a></li>							
+									</ul>
+								</div>
+								<div class="col-md-3">
+									<h4>Compassion</h4>
+									<ul>
+										<li><a href="">8wks-Kindergarten</a></li><!-- 
+										--><li><a href="">1st-4th</a></li><!-- 
+										--><li><a href="">5th & 6th</a></li><!-- 
+										--><li><a href="">Special Needs</a></li><!-- 
+										--><li><a href="">Breakaway Camps</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>

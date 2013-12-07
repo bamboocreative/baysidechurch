@@ -6,7 +6,7 @@
 // @codekit-prepend "collapse.js"
 // @codekit-prepend "dropdown.js"
 // @codekit-prepend "modal.js"
-// @codekit-prepend "popover.js"
+// "popover.js"
 // @codekit-prepend "scrollspy.js"
 // @codekit-prepend "tab.js"
 // @codekit-prepend "tooltip.js"

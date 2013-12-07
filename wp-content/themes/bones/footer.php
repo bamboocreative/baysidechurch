@@ -1,3 +1,4 @@
+			</div>
 			<footer class="footer" role="contentinfo">
 				<div class="container">
 					<div id="inner-footer" class="wrap clearfix">

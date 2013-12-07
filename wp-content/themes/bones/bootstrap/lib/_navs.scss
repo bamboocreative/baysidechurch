@@ -27,81 +27,131 @@ img.logo{
 nav.header{
 	// border-top: 1px solid rgba(0,0,0,.1);
 	background: $brand-darker;
-}
-
-.nav {
-  margin-bottom: 0;
-  padding-left: 0; // Override default ul/ol
-  list-style: none;
-  @include clearfix();
-
-   
-   ul{
-		padding: 0px;
-		margin: 0px;
+	.mainnav{
+	
+		.nav {
+		  margin-bottom: 0;
+		  padding-left: 0; // Override default ul/ol
+		  list-style: none;
+		  @include clearfix();
+		   ul{
+				padding: 0px;
+				margin: 0px;
+				font-size: 0px;
+				
+				li {
+				 display: inline-block;
+				 font-size: $font-size-base;		 
+				  &.current_page_item{
+					  a{
+					  background: rgba(1,1,1,.1);
+					  }
+				  }
+				  a {
+				   font-size: 1.1em;
+				   padding: 10px 20px;
+				   font-weight: 700;
+				   text-transform: uppercase;
+				   position: relative;
+				   display: inline-block;
+				   // padding: $nav-link-padding;
+				   @include transition(background $transitionTime);
+				   color: #fff;
+				   &:hover,
+				   &:focus, &.active {
+				   	color: #fff;
+					 text-decoration: none;
+					 background: rgba(1,1,1,.1);
+				   }
+				 }
+			
+				 // Disabled state sets text to gray and nukes hover/tab effects
+				 &.disabled > a {
+				   color: $nav-disabled-link-color;
+			
+				   &:hover,
+				   &:focus {
+					 color: $nav-disabled-link-hover-color;
+					 text-decoration: none;
+					 background-color: transparent;
+					 cursor: not-allowed;
+				   }
+				 }
+			   }
+			 }
+			 
 		
-		li {
-		 display: inline-block;		 
-		  &.current_page_item{
-			  a{
-			  background: rgba(1,1,1,.1);
-			  }
+		  // Open dropdowns
+		  .open > a {
+			&,
+			&:hover,
+			&:focus {
+			  background-color: $nav-link-hover-bg;
+			  border-color: $link-color;
+			}
 		  }
-		  a {
-		   font-size: 1.1em;
-		   padding: 10px 20px;
-		   font-weight: 700;
-		   text-transform: uppercase;
-		   position: relative;
-		   display: inline-block;
-		   // padding: $nav-link-padding;
-		   @include transition(background $transitionTime);
-		   color: #fff;
-		   &:hover,
-		   &:focus, {
-		   	color: #fff;
-			 text-decoration: none;
-			 background: rgba(1,1,1,.1);
-		   }
-		 }
-	
-		 // Disabled state sets text to gray and nukes hover/tab effects
-		 &.disabled > a {
-		   color: $nav-disabled-link-color;
-	
-		   &:hover,
-		   &:focus {
-			 color: $nav-disabled-link-hover-color;
-			 text-decoration: none;
-			 background-color: transparent;
-			 cursor: not-allowed;
-		   }
-		 }
-	   }
-	 }
-	 
-
-  // Open dropdowns
-  .open > a {
-	&,
-	&:hover,
-	&:focus {
-	  background-color: $nav-link-hover-bg;
-	  border-color: $link-color;
+		
+		  // Dividers (basically an hr) within the dropdown
+		  .nav-divider {
+			@include nav-divider();
+		  }
+		
+		  // Prevent IE8 from misplacing imgs
+		  // See https://github.com/h5bp/html5-boilerplate/issues/984#issuecomment-3985989
+		  > li > a > img {
+			max-width: none;
+		  }
+		}
 	}
-  }
-
-  // Dividers (basically an hr) within the dropdown
-  .nav-divider {
-	@include nav-divider();
-  }
-
-  // Prevent IE8 from misplacing imgs
-  // See https://github.com/h5bp/html5-boilerplate/issues/984#issuecomment-3985989
-  > li > a > img {
-	max-width: none;
-  }
 }
+
+.page-wrapper{
+	position: relative;
+	.subnav{
+		background: rgba(45,93,147,.9);
+		top: 0;
+		
+		position: absolute;
+		z-index: 9999;
+		width: 100%;
+		// FadeIn
+		// display: none;
+		
+		// SlideDown
+		max-height: 0px;
+		overflow: hidden;
+		
+		@include transition(max-height 1s);
+		
+		&.opened{max-height: 1200px;}
+		
+		.subnav-inner{
+			padding: 20px 0px;
+			h4{
+				color: $brand-primary;
+				font-weight: 600;
+			}
+			ul{
+				padding: 0px;
+				list-style-type: none;
+				li{
+					a{
+						color: #fff;
+						font-weight: 400;
+						
+						@include transition(opacity $transitionTime);
+						
+						&:hover{
+							opacity: .7;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
 
 
 // Tabs

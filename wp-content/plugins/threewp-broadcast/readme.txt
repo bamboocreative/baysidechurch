@@ -20,7 +20,7 @@ Network plugin for PHP v5.4 to broadcast posts to other blogs in the network. Br
 * Attached images
 * Featured images
 * Galleries
-* Woocommerce support (add "product" as a custom post type to broadcast)
+* Woocommerce support (see FAQ)
 * WPML support
 
 Broadcasted posts can be linked to their parents, which updates child posts when the parent post is updated. This includes all data: title, slug, content, custom fields, attachments, etc.
@@ -44,11 +44,13 @@ The <a href="http://plainview.se/wordpress/threewp-broadcast-premium-pack/" titl
 For a complete list of features and more information, see <a href="http://plainview.se/wordpress/threewp-broadcast-premium-pack/" title="Premium Pack's page on the web"><em>Broadcast Premium Pack</em>'s page on the web</a>. Currently the Premium Pack offers:
 
 * <strong>Advanced Custom Fields</strong> adds support for correctly broadcasting image field types using the ACF plugin.
+* <strong>Keep Child Status</strong> keeps the status of post children to private, pending, published, draft, no matter the status of the parent.
 * <strong>Local Links</strong> automatically updates links to local posts on each child blog.
 * <strong>Queue</strong> adds a broadcast queue which helps to broadcast posts to tens / hundreds / more blogs.
 * <strong>Send To Many</strong> broadcasts many posts to several blogs at once, instead of individually editing and broadcasting each post.
 * <strong>User & Blog Settings</strong> can hide the broadcast meta box and/or menu, modify the meta box to force/prevent broadcast to blogs, with separate settings for users / blogs / roles.
 * <strong>Views</strong> adds support for WP Types and Views content templates.
+* <strong>WooCommerce</strong> allows product variations to be broadcasted.
 
 = Misc =
 
@@ -96,6 +98,8 @@ Broadcast offers some actions/filters for plugin developers with which to intera
 17. Premium Pack: Showing a modification, info and to whom the modification applies (Blog & User Settings plugin)
 18. Premium Pack: Adding one row of criteria for a modification (Blog & User Settings plugin)
 19. Premium Pack: Advanced Custom Fields image support
+20. Premium Pack: Make the child posts have a different status from the parent (Keep Child Status plugin)
+21. Premium Pack: The WooCommerce plugin enables broadcasting of product variations as well
 
 == Frequently Asked Questions ==
 
@@ -153,6 +157,18 @@ Make sure that:
 4. The correct post type(s) have been selected
 5. <em>User & Blog Settings</em> is not set to hide the meta box from the user / role / blog
 
+= WooCommerce =
+
+Broadcast is capable of handling WooCommerce products.
+
+1. In the custom post type settings: Add "product"
+2. In the settings: select broadcast internal custom fields.
+3. When broadcasting, select custom fields and taxonomies.
+
+This will broadcast all normal product settings: SKU, price, etc.
+
+If your products have variations, you'll be wanting the WooCommerce plugin from the premium pack.
+
 = WPML Sitepress =
 
 There is an included plugin, ThreeWP Broadcast WPML, that provides support for transferring WPML translation data between broadcasted posts.
@@ -169,6 +185,20 @@ It works transparently in the background, but in case you've never really used W
 Translated categories and tags are untested as of 2013-07-17.
 
 == Changelog ==
+
+= 2.10 20131121 =
+* New: Duplicate broadcast data check in maintenance.
+* New: WooCommerce plugin is now available in the premium pack.
+* Fix: Loading of CSS and JS from non-standard path.
+* Fix: Check that the thumbnail is an image before setting it.
+* Code: No more global broadcasting_data property.
+* Code: broadcasting_data can be used as call stack.
+
+= 2.9 20131113 =
+* New: Add "blogs to hide" setting.
+* New: Keep Child Status plugin is now available in the premium pack.
+* Fix: Blog names are unescaped. No more weird HTML characters in the blog list.
+* Code: broadcast array is no longer removed from the $_POST, due to copy by reference on some versions of PHP 5.4.
 
 = 2.8 20131109 =
 * New: Attachments are attributed to the original author, instead of the person doing the broadcasting.

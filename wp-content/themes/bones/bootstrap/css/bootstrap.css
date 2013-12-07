@@ -3607,56 +3607,87 @@ img.logo {
 
 nav.header {
   background: #2d5d93; }
-
-.nav {
-  margin-bottom: 0;
-  padding-left: 0;
-  list-style: none; }
-  .nav:before, .nav:after {
-    content: " ";
-    /* 1 */
-    display: table;
-    /* 2 */ }
-  .nav:after {
-    clear: both; }
-  .nav ul {
-    padding: 0px;
-    margin: 0px; }
-    .nav ul li {
-      display: inline-block; }
-      .nav ul li.current_page_item a {
-        background: rgba(1, 1, 1, 0.1); }
-      .nav ul li a {
-        font-size: 1.1em;
-        padding: 10px 20px;
-        font-weight: 700;
-        text-transform: uppercase;
-        position: relative;
+  nav.header .mainnav .nav {
+    margin-bottom: 0;
+    padding-left: 0;
+    list-style: none; }
+    nav.header .mainnav .nav:before, nav.header .mainnav .nav:after {
+      content: " ";
+      /* 1 */
+      display: table;
+      /* 2 */ }
+    nav.header .mainnav .nav:after {
+      clear: both; }
+    nav.header .mainnav .nav ul {
+      padding: 0px;
+      margin: 0px;
+      font-size: 0px; }
+      nav.header .mainnav .nav ul li {
         display: inline-block;
-        -webkit-transition: background 0.3s;
-        transition: background 0.3s;
-        color: #fff; }
-        .nav ul li a:hover, .nav ul li a:focus {
-          color: #fff;
-          text-decoration: none;
+        font-size: 19px; }
+        nav.header .mainnav .nav ul li.current_page_item a {
           background: rgba(1, 1, 1, 0.1); }
-      .nav ul li.disabled > a {
-        color: #999999; }
-        .nav ul li.disabled > a:hover, .nav ul li.disabled > a:focus {
-          color: #999999;
-          text-decoration: none;
-          background-color: transparent;
-          cursor: not-allowed; }
-  .nav .open > a, .nav .open > a:hover, .nav .open > a:focus {
-    background-color: #eeeeee;
-    border-color: #00aeef; }
-  .nav .nav-divider {
-    height: 1px;
-    margin: 12.5px 0;
+        nav.header .mainnav .nav ul li a {
+          font-size: 1.1em;
+          padding: 10px 20px;
+          font-weight: 700;
+          text-transform: uppercase;
+          position: relative;
+          display: inline-block;
+          -webkit-transition: background 0.3s;
+          transition: background 0.3s;
+          color: #fff; }
+          nav.header .mainnav .nav ul li a:hover, nav.header .mainnav .nav ul li a:focus, nav.header .mainnav .nav ul li a.active {
+            color: #fff;
+            text-decoration: none;
+            background: rgba(1, 1, 1, 0.1); }
+        nav.header .mainnav .nav ul li.disabled > a {
+          color: #999999; }
+          nav.header .mainnav .nav ul li.disabled > a:hover, nav.header .mainnav .nav ul li.disabled > a:focus {
+            color: #999999;
+            text-decoration: none;
+            background-color: transparent;
+            cursor: not-allowed; }
+    nav.header .mainnav .nav .open > a, nav.header .mainnav .nav .open > a:hover, nav.header .mainnav .nav .open > a:focus {
+      background-color: #eeeeee;
+      border-color: #00aeef; }
+    nav.header .mainnav .nav .nav-divider {
+      height: 1px;
+      margin: 12.5px 0;
+      overflow: hidden;
+      background-color: #e5e5e5; }
+    nav.header .mainnav .nav > li > a > img {
+      max-width: none; }
+
+.page-wrapper {
+  position: relative; }
+  .page-wrapper .subnav {
+    background: rgba(45, 93, 147, 0.9);
+    top: 0;
+    position: absolute;
+    z-index: 9999;
+    width: 100%;
+    max-height: 0px;
     overflow: hidden;
-    background-color: #e5e5e5; }
-  .nav > li > a > img {
-    max-width: none; }
+    -webkit-transition: max-height 1s;
+    transition: max-height 1s; }
+    .page-wrapper .subnav.opened {
+      max-height: 1200px; }
+    .page-wrapper .subnav .subnav-inner {
+      padding: 20px 0px; }
+      .page-wrapper .subnav .subnav-inner h4 {
+        color: #00aeef;
+        font-weight: 600; }
+      .page-wrapper .subnav .subnav-inner ul {
+        padding: 0px;
+        list-style-type: none; }
+        .page-wrapper .subnav .subnav-inner ul li a {
+          color: #fff;
+          font-weight: 400;
+          -webkit-transition: opacity 0.3s;
+          transition: opacity 0.3s; }
+          .page-wrapper .subnav .subnav-inner ul li a:hover {
+            opacity: .7; }
 
 .nav-tabs {
   border-bottom: 1px solid #dddddd; }
@@ -5802,9 +5833,65 @@ footer.footer {
   color: #fff;
   padding: 20px 0px; }
 
-.header-image {
-  min-height: 250px;
-  background-size: auto 250px;
-  background-position: center center;
-  background-repeat: no-repeat;
-  margin-bottom: 30px; }
+table.header-image-wrapper {
+  width: 100%; }
+  table.header-image-wrapper .header-image {
+    height: 250px;
+    padding: 20px 20px;
+    background-size: auto 250px;
+    background-position: center center;
+    background-repeat: no-repeat;
+    margin-bottom: 30px;
+    text-align: center; }
+    table.header-image-wrapper .header-image img {
+      width: 400px; }
+
+.ministry-page {
+  background: #00aeef; }
+  .ministry-page article {
+    color: #fff;
+    padding: 30px 0px; }
+    .ministry-page article h1 {
+      margin: 0px;
+      display: inline; }
+    .ministry-page article h4.in-touch {
+      font-weight: 600;
+      margin-top: 19px; }
+    .ministry-page article h4.ages {
+      font-weight: 600;
+      font-size: 1em;
+      margin: 0px;
+      margin-top: 10px;
+      margin-left: 1.5em; }
+    .ministry-page article .social {
+      background: rgba(0, 0, 0, 0.14);
+      padding: 14px; }
+      .ministry-page article .social a {
+        color: #fff; }
+        .ministry-page article .social a h4 {
+          -webkit-transition: opacity 0.3s;
+          transition: opacity 0.3s;
+          margin: 7px 0px 0px; }
+          .ministry-page article .social a h4:hover {
+            opacity: .7; }
+        .ministry-page article .social a.soicon {
+          display: inline-block;
+          width: 38px;
+          height: 35px;
+          padding-top: 5px;
+          margin-right: 14px;
+          text-align: center;
+          -webkit-transition: background-color 0.3s;
+          transition: background-color 0.3s; }
+          .ministry-page article .social a.soicon.facebook {
+            background-color: #537bbd; }
+            .ministry-page article .social a.soicon.facebook:hover {
+              background-color: #36578d; }
+          .ministry-page article .social a.soicon.twitter {
+            background-color: #78cdf0; }
+            .ministry-page article .social a.soicon.twitter:hover {
+              background-color: #33b3e8; }
+          .ministry-page article .social a.soicon.instagram {
+            background-color: #696a6a; }
+            .ministry-page article .social a.soicon.instagram:hover {
+              background-color: #434444; }
