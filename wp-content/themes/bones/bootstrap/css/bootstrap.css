@@ -1426,11 +1426,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
   vertical-align: middle;
   background-color: white;
   border: 1px solid #cccccc;
-  border-radius: 4px;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  -webkit-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s; }
+  font-weight: 200; }
   .form-control:focus {
     border-color: #66afe9;
     outline: 0;
@@ -1442,6 +1438,32 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
 
 textarea.form-control {
   height: auto; }
+
+form.search {
+  position: relative; }
+  form.search input[type="text"] {
+    border: 0px; }
+  form.search button {
+    background: none;
+    position: absolute;
+    text-align: center;
+    top: 0;
+    right: 0;
+    z-index: 999;
+    color: #999999;
+    outline: 0;
+    border: 0;
+    height: 100%;
+    padding-left: 7px;
+    width: 40px;
+    border-left: 1px solid #eeeeee;
+    -webkit-transition: background 0.3s, color 0.3s;
+    transition: background 0.3s, color 0.3s; }
+    form.search button:hover {
+      background: #89dfff;
+      color: #fff; }
+    form.search button:active {
+      background: #70d8ff; }
 
 .form-group {
   margin-bottom: 15px; }
@@ -3620,27 +3642,33 @@ nav.header {
       clear: both; }
     nav.header .mainnav .nav ul {
       padding: 0px;
-      margin: 0px;
-      font-size: 0px; }
+      margin: 0px; }
       nav.header .mainnav .nav ul li {
-        display: inline-block;
-        font-size: 19px; }
-        nav.header .mainnav .nav ul li.current_page_item a {
-          background: rgba(1, 1, 1, 0.1); }
-        nav.header .mainnav .nav ul li a {
+        display: inline-block; }
+        nav.header .mainnav .nav ul li:first-child a {
+          padding-left: 0px; }
+        nav.header .mainnav .nav ul li:after {
+          font-size: #fff;
+          content: '/';
+          display: inline-block;
+          margin: 0px 15px;
+          font-weight: 400 !important; }
+        nav.header .mainnav .nav ul li:last-child:after {
+          display: none; }
+        nav.header .mainnav .nav ul li a, nav.header .mainnav .nav ul li:after {
           font-size: 1.1em;
-          padding: 10px 20px;
+          padding: 10px inherit;
           font-weight: 700;
           text-transform: uppercase;
           position: relative;
           display: inline-block;
-          -webkit-transition: background 0.3s;
-          transition: background 0.3s;
+          -webkit-transition: opacity 0.3s;
+          transition: opacity 0.3s;
           color: #fff; }
-          nav.header .mainnav .nav ul li a:hover, nav.header .mainnav .nav ul li a:focus, nav.header .mainnav .nav ul li a.active {
+          nav.header .mainnav .nav ul li a:hover, nav.header .mainnav .nav ul li a:focus, nav.header .mainnav .nav ul li a.active, nav.header .mainnav .nav ul li:after:hover, nav.header .mainnav .nav ul li:after:focus, nav.header .mainnav .nav ul li:after.active {
             color: #fff;
             text-decoration: none;
-            background: rgba(1, 1, 1, 0.1); }
+            opacity: .7; }
         nav.header .mainnav .nav ul li.disabled > a {
           color: #999999; }
           nav.header .mainnav .nav ul li.disabled > a:hover, nav.header .mainnav .nav ul li.disabled > a:focus {
@@ -5712,7 +5740,8 @@ td.visible-print {
   -moz-box-sizing: border-box;
   /* Firefox, other Gecko */
   box-sizing: border-box;
-  /* Opera/IE 8+ */ }
+  /* Opera/IE 8+ */
+  outline: 0 !important; }
 
 a {
   -webkit-transition: color 0.3s;

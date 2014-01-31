@@ -130,9 +130,7 @@ input[type="number"] {
   vertical-align: middle;
   background-color: $input-bg;
   border: 1px solid $input-border;
-  border-radius: $input-border-radius;
-  @include box-shadow(inset 0 1px 1px rgba(0,0,0,.075));
-  @include transition(border-color ease-in-out .15s, box-shadow ease-in-out .15s);
+  font-weight: $font-weight-light;
 
   // Customize the `:focus` state to imitate native WebKit styles.
   @include form-control-focus();
@@ -152,6 +150,38 @@ input[type="number"] {
 // Reset height for `textarea`s
 textarea.form-control {
   height: auto;
+}
+
+form.search{
+	position: relative;
+	
+	input[type="text"]{
+		border: 0px;
+		// min-width: 300px;
+	}
+	button{
+		background: none;
+		position: absolute;
+		text-align: center;
+		top:0;
+		right: 0;
+		z-index: 999;
+		color: $gray-light;
+		outline: 0;
+		border: 0;
+		height: 100%;
+		padding-left: 7px;
+		width: 40px;
+		border-left: 1px solid $gray-lighter;
+		@include transition(background $transitionTime, color $transitionTime);
+		&:hover{
+			background: lighten($brand-primary, 30%);
+			color: #fff;
+		}
+		&:active{
+			background: lighten($brand-primary, 25%);
+		}
+	}
 }
 
 

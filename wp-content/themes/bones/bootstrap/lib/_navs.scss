@@ -37,31 +37,45 @@ nav.header{
 		   ul{
 				padding: 0px;
 				margin: 0px;
-				font-size: 0px;
 				
 				li {
-				 display: inline-block;
-				 font-size: $font-size-base;		 
-				  &.current_page_item{
-					  a{
-					  background: rgba(1,1,1,.1);
+					display: inline-block;
+					&:first-child{
+						a{
+						padding-left: 0px;	
+						}
+					}
+				  &:after{
+					  font-size: #fff;
+					  content: '/';
+					  display: inline-block;
+					  margin: 0px 15px;
+					  font-weight: 400 !important;
+				  }
+				  
+				  // Hides the menu seperator for the last menu Item
+				  &:last-child{
+					   &:after{
+						  display: none;
 					  }
 				  }
-				  a {
+				  
+				  a, &:after{
 				   font-size: 1.1em;
-				   padding: 10px 20px;
+				   padding: 10px inherit;
 				   font-weight: 700;
 				   text-transform: uppercase;
 				   position: relative;
 				   display: inline-block;
 				   // padding: $nav-link-padding;
-				   @include transition(background $transitionTime);
+				   @include transition(opacity $transitionTime);
 				   color: #fff;
+				   
 				   &:hover,
 				   &:focus, &.active {
 				   	color: #fff;
 					 text-decoration: none;
-					 background: rgba(1,1,1,.1);
+					 opacity: .7;
 				   }
 				 }
 			

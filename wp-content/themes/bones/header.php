@@ -49,12 +49,12 @@
 			<div class="header-wrapper">
 				<header class="header" role="banner">
 					<div class="top-level container">
-						<table>
-							<tr>
-								<td>
-									<a href="<?php echo bloginfo('wpurl'); ?>"><img class="logo" src="<?php echo get_template_directory_uri(); ?>/library/images/bayside-white.svg"></a>
-								</td>
-								<td>
+						<div class="header-inner">
+							<div class="row">
+								<div class="col-md-4">
+								<a href="<?php echo bloginfo('wpurl'); ?>"><img class="logo" src="<?php echo get_template_directory_uri(); ?>/library/images/bayside-white.svg"></a>
+								</div>
+								<div class="col-md-4">
 									<select>
 									<?php // This runs through all oft he blogs and returns custom links. Check out "theNewURL()" in bones.php
 									$blog_list = wp_get_sites();
@@ -65,21 +65,27 @@
 										echo '<option>'. theNewURL($blogID) .'</option>';
 									}?>
 									</select>
-								</td>
-							</tr>
-						</table>
+								</div>
+								<div class="col-md-3">
+									<form class="search">
+										<input class="form-control" type="text">
+										<button class=""><i class="fa fa-search"></i></button>
+									</form>
+								</div>
+							</div>
+						</div>
 					</div>
 					
 					<nav class="header">
 				        <div class="container mainnav">
 					        <div class="nav top-nav clearfix">
 						        <ul>
-								   <li><a id="about" href="javascript:void(0)">About</a></li>
-								   <li><a id="events" href="javascript:void(0)">Events</a></li>
-								   <li><a id="campuses" href="javascript:void(0)">Campuses</a></li>
-								   <li><a id="ministries" href="javascript:void(0)">Ministries</a></li>
-								   <li><a id="media" href="javascript:void(0)">Media</a></li>
-								   <li><a id="give" href="javascript:void(0)">Give</a></li>
+								   <li><a id="about" href="javascript:void(0)">About</a></li><!--
+								   --><li><a id="events" href="javascript:void(0)">Events</a></li><!--
+								   --><li><a id="campuses" href="javascript:void(0)">Campuses</a></li><!--
+								   --><li><a id="ministries" href="javascript:void(0)">Ministries</a></li><!--
+								   --><li><a id="media" href="javascript:void(0)">Media</a></li><!--
+								   --><li><a id="give" href="javascript:void(0)">Give</a></li>
 						        </ul>
 					        </div>
 				        </div>

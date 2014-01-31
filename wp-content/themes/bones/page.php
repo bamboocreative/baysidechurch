@@ -9,7 +9,10 @@
 							
 							<?php 
 							// Sets up page variables
-							
+							$facebook = get_field('facebook_url');
+							$twitter = get_field('twitter_username');
+							$instagram = get_field('instagram_username');
+							$email = get_field('contact_email');
 							
 							
 							;
@@ -65,15 +68,16 @@
 												<?php the_content(); ?>
 												</div>
 												<div class="col-md-4 col-sm-5">
+													<?php if($facebook || $twitter || $instagram || $email){ ?>
 													<h4 class="in-touch">GET IN TOUCH</h4>
 													<div class="social">
-														<a class="facebook soicon" href=""><i class="fa fa-facebook"></i></a><!--
-														--><a class="twitter soicon" href=""><i class="fa fa-twitter"></i></a><!--
-														--><a class="instagram soicon" href=""><i class="fa fa-instagram"></i></a>
+														<?php if($facebook){ ?><a class="facebook soicon" href="<?php echo 'http://www.' . $facebook ?>"><i class="fa fa-facebook"></i></a><?php } ?><!--
+														--><?php if($twitter){ ?><a class="twitter soicon" href="<?php echo 'http://www.twitter.com/' . $twitter ?>"><i class="fa fa-twitter"></i></a><?php } ?><!--
+														--><?php if($instagram){ ?><a class="instagram soicon" href="<?php echo 'http://www.twitter.com/' . $instagram ?>"><i class="fa fa-instagram"></i></a><?php } ?>
 														<br>
-														<a href=""><h4>Sports@BaysideOnline.com</h4></a>
+														<?php if($email){ ?><a href="mailto:<?php echo $email ?>"><h4><?php echo $email ?></h4></a><?php } ?>
 													</div>
-													
+													<?php } ?>
 												</div>
 											</div>
 										</section> <?php // end article section ?>
