@@ -1,0 +1,43 @@
+{% block events %}
+{% if events %}
+{% for event in events %}
+<div class="event-wrapper">
+	<div class="row">
+		<div class="col-md-12">
+			<a href="{{event.permalink}}">
+				 {% if event.feat_image %}
+				<div class="calendar image"><img src="{{event.feat_image}}"></div>
+				 {% else %}
+				<div class="calendar">
+					<table>
+						<tr class="month"><td>{{event.month}}</td></tr>
+						<tr class="day"><td><div class="date-text">{{event.day}}</div></td></tr>
+					</table>
+				</div>	
+				 {% endif %}
+			</a>
+			<h1>
+				<a href="{{event.permalink}}">{{event.title}}</a>
+				{% if event.featured %}
+				<div class="tag-wrapper">
+					<span class="event-tag featured">Featured</span>
+				</div>
+				{% endif %}
+			</h1>
+			<table class="event-details">
+				<tr>
+					<td><i class="fa fa-calendar-o"></i>{{event.date}}</td>
+					<td><i class="fa fa-clock-o"></i>{{event.time}}</td>
+					<td><i class="fa fa-map-marker"></i>{{event.location}}</td>
+					<td><i class="fa fa-usd"></i>{{event.cost}}</td>
+				</tr>
+			</table>
+			<p class="event-content">
+				 {{event.trimmed_content}}
+			</p>
+		</div>
+	</div>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock events %}

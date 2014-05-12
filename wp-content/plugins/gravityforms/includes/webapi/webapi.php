@@ -1,13 +1,8 @@
 <?php
 
-/**
- * todo
- * - Support for Authorization header?
- * - Enforce maximum expiration?
- * - MVC pattern?
- * - support for JSONP
- * - API wrappers
- */
+if(!class_exists('GFForms')){
+    die();
+}
 
 
 if (!defined('GFWEBAPI_REQUIRE_SIGNATURE'))
@@ -90,11 +85,11 @@ if (class_exists("GFForms")) {
 
         protected function plugin_settings_init() {
             $subview = rgget("subview");
-            RGForms::add_settings_page( array(
-                'name' => __("Gravity Forms API Settings", "gravityforms"),
+            RGForms::add_settings_page(array(
+                'name'      => __("Gravity Forms API Settings", "gravityforms"),
                 'tab_label' => $this->get_short_title(),
-                'handler' => array($this, 'plugin_settings_page')
-            ) );
+                'handler'   => array($this, 'plugin_settings_page')
+            ));
             if (rgget("page") == "gf_settings" && $subview == $this->get_short_title() && $this->current_user_can_any($this->_capabilities_settings_page)) {
                 require_once(GFCommon::get_base_path() . "/tooltips.php");
             }
@@ -104,13 +99,13 @@ if (class_exists("GFForms")) {
         public function scripts() {
             $scripts = array(
                 array("handle"  => "gfwebapi_hmac_sha1",
-                      "src"     => "http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/hmac-sha1.js",
+                      "src"     => "https://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/hmac-sha1.js",
                       "enqueue" => array(
                           array("admin_page" => array("plugin_settings"))
                       )
                 ),
                 array("handle"   => "gfwebapi_enc_base64",
-                      "src"      => "http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/enc-base64-min.js",
+                      "src"      => "https://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/enc-base64-min.js",
                       "deps"     => array('gfwebapi_hmac_sha1'),
                       "callback" => array($this, "localize_form_settings_scripts"),
                       "enqueue"  => array(
@@ -151,13 +146,16 @@ if (class_exists("GFForms")) {
 
         // ------- Plugin settings -------
 
-        public function plugin_settings_title(){
-            return "<span><i class='fa fa-cogs'></i> " . __("Gravity Forms API Settings", "gravityforms") . "</span>";
+        public function plugin_settings_title() {
+            return "<span>" . __("Gravity Forms API Settings", "gravityforms") . "</span>";
         }
 
         public function plugin_settings_fields() {
-            $max_accounts    = apply_filters("gform_webapi_max_accounts_settings_page", 200);
-            $accounts        = get_users(array("number" => $max_accounts));
+
+            $args = apply_filters("gform_webapi_get_users_settings_page", array("number" => 200));
+
+            $accounts = get_users($args);
+
             $account_choices = array();
             foreach ($accounts as $account) {
                 $account_choices[] = array("label" => $account->user_login, "value" => $account->ID);
@@ -232,7 +230,7 @@ if (class_exists("GFForms")) {
         }
 
         public function settings_requirements_check() {
-            $permalinks_url  = admin_url("options-permalink.php");
+            $permalinks_url = admin_url("options-permalink.php");
             echo "<i class='fa fa-exclamation-triangle gf_invalid'></i> <span class='gf_invalid'>Permalinks are not in the correct format.</span><br /><span class='gf_settings_description'>Change the <a href='{$permalinks_url}'>WordPress Permalink Settings</a> from default to any of the other options to get started.</span>";
         }
 
@@ -319,7 +317,13 @@ if (class_exists("GFForms")) {
 
             $gfapi_rules[GFWEBAPI_SLUG . '/(.*)'] = 'index.php?' . GFWEBAPI_ROUTE_VAR . '=$matches[1]';
 
-            $rules = $gfapi_rules + $rules;
+            if (is_array($rules)){
+                // the array operator instead of array_merge avoids tampering with the keys in the original array
+            	$rules = $gfapi_rules + $rules;
+			}
+			else{
+				$rules = $gfapi_rules;
+			}
 
             return $rules;
         }
@@ -334,6 +338,8 @@ if (class_exists("GFForms")) {
 
         public function handle_page_request() {
 
+            global $HTTP_RAW_POST_DATA;
+
             $route = get_query_var(GFWEBAPI_ROUTE_VAR);
             if (false == $route)
                 return;
@@ -344,10 +350,12 @@ if (class_exists("GFForms")) {
             if ($test_mode)
                 die("test mode");
 
-            $settings = get_site_option('gravityformsaddon_gravityformswebapi_settings');
+            $settings = get_option('gravityformsaddon_gravityformswebapi_settings');
 
-            if (empty($settings))
+            if (empty($settings)){
                 $this->die_not_authorized();
+            }
+
             $account_id = $settings["impersonate_account"];
             wp_set_current_user($account_id);
 
@@ -370,8 +378,7 @@ if (class_exists("GFForms")) {
 
             if (strpos($id2, ";") !== false)
                 $id2 = explode(";", $id2);
-            else
-                $id2 = intval($id2);
+
 
             if (empty($format))
                 $format = "json";
@@ -382,160 +389,179 @@ if (class_exists("GFForms")) {
 
             $method        = strtoupper($_SERVER['REQUEST_METHOD']);
             $args          = compact("offset", "page_size", "schema");
-            $filter_suffix = empty($collection2) ? $collection : "_" . $collection2;
-
-            $output = apply_filters("gform_webapi_" . strtolower($method) . "_" . $filter_suffix, "", $id, $collection2, $id2, $format, $args);
-
-            if ("" == $output) {
-                $data = file_get_contents("php://input");
-                $data = json_decode($data, true);
-                switch ($collection) {
-                    case "forms" :
-                        switch ($collection2) {
-                            case "results" :
-                                switch ($method) {
-                                    case 'GET' :
-                                        $this->get_results($id);
-                                        break;
-                                    case 'DELETE':
-                                    case 'PUT':
-                                    case 'POST':
-                                    default:
-                                        $this->die_bad_request();
-                                }
-                                break;
-                            case "feeds" :
-                                if (false == empty($id2))
-                                    $this->die_bad_request();
-                                switch ($method) {
-                                    case 'GET' :
-                                        $this->get_feeds(null, $id);
-                                        break;
-                                    case 'DELETE' :
-                                        $this->delete_feeds(null, $id);
-                                        break;
-                                    case 'PUT' :
-                                        $this->die_not_implemented();
-                                        break;
-                                    case 'POST' :
-                                        $this->post_feeds($data, $id);
-                                        break;
-                                    default :
-                                        $this->die_bad_request();
-                                }
-                                break;
-                            case "entries" :
-                                if (false == empty($id2))
-                                    $this->die_bad_request();
-                                switch ($method) {
-                                    case 'GET' :
-                                        $this->get_entries(null, $id, $schema);
-                                        break;
-                                    case 'POST' :
-                                        $this->post_entries($data, $id);
-                                        break;
-                                    case 'PUT' :
-                                    case 'DELETE' :
-                                    case 'POST' :
-                                        $this->die_not_implemented();
-                                        break;
-                                    default:
-                                        $this->die_bad_request();
-                                }
-                                break;
-
-                            case "" :
-                                switch ($method) {
-                                    case 'GET':
-                                        $this->get_forms($id, $schema);
-                                        break;
-                                    case 'DELETE':
-                                        $this->delete_forms($id);
-                                        break;
-                                    case 'PUT':
-                                        $this->put_forms($data, $id, $id2);
-                                        break;
-                                    case 'POST':
-                                        if (false === empty($id))
-                                            $this->die_bad_request();
-                                        $this->post_forms($data, $id);
-                                        break;
-                                    default:
-                                        $this->die_bad_request();
-                                }
-                                break;
-                            default :
-                                $this->die_bad_request();
-                                break;
-
-                        }
-                        break;
-                    case "entries" : //  route = /entries/{id}
-                        switch ($method) {
-                            case 'GET':
-                                switch ($collection2) {
-                                    case "fields" : // route = /entries/{id}/fields/{id2}
-                                        switch ($method) {
-                                            case 'GET' :
-                                                $this->get_entries($id, null, $schema, $id2);
-                                                break;
-                                            case 'DELETE' :
-                                            case 'PUT' :
-                                            case 'POST' :
-                                            default:
-                                                $this->die_bad_request();
-                                        }
-                                        break;
-                                    case "" :
-                                        $this->get_entries($id, null, $schema);
-                                        break;
-                                }
-
-                                break;
-                            case 'DELETE' :
-                                $this->delete_entries($id);
-                                break;
-                            case 'PUT' :
-                                $this->put_entries($data, $id);
-                                break;
-                            case 'POST' :
-                                if (false === empty($id))
-                                    $this->die_bad_request();
-                                $this->post_entries($data);
-                                break;
-                            default:
-                                $this->die_bad_request();
-                        }
-                        break;
-                    case "feeds" :
-                        switch ($method) {
-                            case 'GET' :
-                                $this->get_feeds($id);
-                                break;
-                            case 'DELETE' :
-                                if (empty($id))
-                                    $this->die_bad_request();
-                                $this->delete_feeds($id);
-                                break;
-                            case 'PUT' :
-                                $this->put_feeds($data, $id);
-                                break;
-                            case 'POST' :
-                                if (false === empty($id))
-                                    $this->die_bad_request();
-                                $this->post_feeds($data);
-                                break;
-                            default :
-                                $this->die_bad_request();
-                        }
-                        break;
-                    default :
-                        $this->die_bad_request();
-                        break;
-                }
-
-
+            if(empty($collection2)){
+                do_action("gform_webapi_" . strtolower($method) . "_" . $collection, $id, $format, $args);
+            } else {
+                do_action("gform_webapi_" . strtolower($method) . "_" . $collection . "_" . $collection2, $id, $id2, $format, $args);
             }
+
+            if (!isset($HTTP_RAW_POST_DATA)) {
+                $HTTP_RAW_POST_DATA = file_get_contents('php://input');
+            }
+
+            GFCommon::log_debug("WebAPI: HTTP_RAW_POST_DATA = " . $HTTP_RAW_POST_DATA);
+
+
+            $data = json_decode($HTTP_RAW_POST_DATA, true);
+
+
+            // todo: tidy up this mess
+
+            switch ($collection) {
+                case "forms" :
+                    switch ($collection2) {
+                        case "results" :
+                            switch ($method) {
+                                case 'GET' :
+                                    $this->get_results($id);
+                                    break;
+                                case 'DELETE':
+                                case 'PUT':
+                                case 'POST':
+                                default:
+                                    $this->die_bad_request();
+                            }
+                            break;
+                        case "properties" :
+                            switch ($method) {
+                                case 'PUT' :
+                                    $this->put_forms_properties($data, $id);
+                                    break;
+                                default:
+                                    $this->die_bad_request();
+                            }
+                            break;
+                        case "feeds" :
+                            if (false == empty($id2))
+                                $this->die_bad_request();
+                            switch ($method) {
+                                case 'GET' :
+                                    $this->get_feeds(null, $id);
+                                    break;
+                                case 'DELETE' :
+                                    $this->delete_feeds(null, $id);
+                                    break;
+                                case 'PUT' :
+                                    $this->die_not_implemented();
+                                    break;
+                                case 'POST' :
+                                    $this->post_feeds($data, $id);
+                                    break;
+                                default :
+                                    $this->die_bad_request();
+                            }
+                            break;
+                        case "entries" :
+                            if (false == empty($id2))
+                                $this->die_bad_request();
+                            switch ($method) {
+                                case 'GET' :
+                                    $this->get_entries(null, $id, $schema);
+                                    break;
+                                case 'POST' :
+                                    $this->post_entries($data, $id);
+                                    break;
+                                case 'PUT' :
+                                case 'DELETE' :
+                                case 'POST' :
+                                    $this->die_not_implemented();
+                                    break;
+                                default:
+                                    $this->die_bad_request();
+                            }
+                            break;
+
+                        case "" :
+                            switch ($method) {
+                                case 'GET':
+                                    $this->get_forms($id, $schema);
+                                    break;
+                                case 'DELETE':
+                                    $this->delete_forms($id);
+                                    break;
+                                case 'PUT':
+                                    $this->put_forms($data, $id, $id2);
+                                    break;
+                                case 'POST':
+                                    if (false === empty($id))
+                                        $this->die_bad_request();
+                                    $this->post_forms($data, $id);
+                                    break;
+                                default:
+                                    $this->die_bad_request();
+                            }
+                            break;
+                        default :
+                            $this->die_bad_request();
+                            break;
+
+                    }
+                    break;
+                case "entries" : //  route = /entries/{id}
+                    switch ($method) {
+                        case 'GET':
+                            switch ($collection2) {
+                                case "fields" : // route = /entries/{id}/fields/{id2}
+                                    $this->get_entries($id, null, $schema, $id2);
+                                    break;
+                                case "" :
+                                    $this->get_entries($id, null, $schema);
+                                    break;
+                                default :
+                                    $this->die_bad_request();
+                            }
+
+                            break;
+                        case 'DELETE' :
+                            $this->delete_entries($id);
+                            break;
+                        case 'PUT' :
+                            switch ($collection2) {
+                                case "properties" : // route = /entries/{id}/properties/{id2}
+                                    $this->put_entry_properties($data, $id);
+                                    break;
+                                case "" :
+                                    $this->put_entries($data, $id);
+                                    break;
+                            }
+
+                            break;
+                        case 'POST' :
+                            if (false === empty($id))
+                                $this->die_bad_request();
+                            $this->post_entries($data);
+                            break;
+                        default:
+                            $this->die_bad_request();
+                    }
+                    break;
+                case "feeds" :
+                    switch ($method) {
+                        case 'GET' :
+                            $this->get_feeds($id);
+                            break;
+                        case 'DELETE' :
+                            if (empty($id))
+                                $this->die_bad_request();
+                            $this->delete_feeds($id);
+                            break;
+                        case 'PUT' :
+                            $this->put_feeds($data, $id);
+                            break;
+                        case 'POST' :
+                            if (false === empty($id))
+                                $this->die_bad_request();
+                            $this->post_feeds($data);
+                            break;
+                        default :
+                            $this->die_bad_request();
+                    }
+                    break;
+                default :
+                    $this->die_bad_request();
+                    break;
+            }
+
 
             $this->die_bad_request();
 
@@ -543,7 +569,7 @@ if (class_exists("GFForms")) {
 
         public function authorize($caps = array()) {
 
-            if (GFCommon::current_user_can_any($caps)){
+            if (GFCommon::current_user_can_any($caps)) {
 
                 GFCommon::add_api_call();
 
@@ -600,9 +626,9 @@ if (class_exists("GFForms")) {
 
             if (isset($result) && is_wp_error($result)) {
                 $response = $this->get_error_response($result);
-                $status = $this->get_error_status($result);
+                $status   = $this->get_error_status($result);
             } else {
-                $status = 200;
+                $status   = 200;
                 $response = sprintf(__("Feeds deleted successfully: %d", "gravityforms"), $count);
             }
 
@@ -613,7 +639,7 @@ if (class_exists("GFForms")) {
 
             self::authorize("gravityforms_edit_forms");
 
-            $count = 0;
+            $count  = 0;
             $result = array();
             if (empty($feed_id)) {
                 foreach ($feed_data as $feed) {
@@ -631,9 +657,9 @@ if (class_exists("GFForms")) {
 
             if (isset($results) && is_wp_error($result)) {
                 $response = $this->get_error_response($result);
-                $status = $this->get_error_status($result);
+                $status   = $this->get_error_status($result);
             } else {
-                $status = 200;
+                $status   = 200;
                 $response = sprintf(__("Feeds updated: %d", "gravityforms"), $count);
             }
 
@@ -645,7 +671,7 @@ if (class_exists("GFForms")) {
             $this->authorize("gravityforms_edit_forms");
 
             $feed_ids = array();
-            $result = array();
+            $result   = array();
             foreach ($feeds as $feed) {
                 $addon_slug = isset($feed["addon_slug"]) ? $feed["addon_slug"] : rgget("addon");
                 $f_id       = empty($form_id) ? $feed["form_id"] : $form_id;
@@ -660,9 +686,9 @@ if (class_exists("GFForms")) {
             }
             if (is_wp_error($result)) {
                 $response = $this->get_error_response($result);
-                $status = $this->get_error_status($result);
+                $status   = $this->get_error_status($result);
             } else {
-                $status = 201;
+                $status   = 201;
                 $response = $feed_ids;
 
             }
@@ -691,9 +717,9 @@ if (class_exists("GFForms")) {
 
             if (isset($result) && is_wp_error($result)) {
                 $response = $this->get_error_response($result);
-                $status = $this->get_error_status($result);
+                $status   = $this->get_error_status($result);
             } else {
-                $status = 200;
+                $status   = 200;
                 $response = sprintf(__("Forms deleted successfully: %d", "gravityforms"), $count);
 
             }
@@ -709,10 +735,10 @@ if (class_exists("GFForms")) {
 
             if (is_wp_error($result)) {
                 $response = $this->get_error_response($result);
-                $status = $this->get_error_status($result);
+                $status   = $this->get_error_status($result);
             } else {
-                $status = 201;
-                $response   = $result;
+                $status   = 201;
+                $response = $result;
             }
 
             $this->end($status, $response);
@@ -726,13 +752,67 @@ if (class_exists("GFForms")) {
 
             if (is_wp_error($result)) {
                 $response = $this->get_error_response($result);
-                $status = $this->get_error_status($result);
+                $status   = $this->get_error_status($result);
             } else {
-                $status = 200;
+                $status   = 200;
                 $response = empty($entry_id) ? __("Entries updated successfully", "gravityforms") : __("Entry updated successfully", "gravityforms");
             }
 
             $this->end($status, $response);
+        }
+
+        public function put_forms_properties($property_values, $form_id){
+            $this->authorize("gravityforms_edit_forms");
+
+            foreach($property_values as $key => $property_value){
+                $result = GFAPI::update_form_property($form_id, $key, $property_value);
+                if(is_wp_error($result)){
+                    break;
+                }
+            }
+
+            if (is_wp_error($result)) {
+                $response = $this->get_error_response($result);
+                $status   = $this->get_error_status($result);
+            } else {
+                $status   = 200;
+                $response = __("Success", "gravityforms");
+            }
+
+            $this->end($status, $response);
+
+        }
+
+        public function put_entry_properties($property_values, $entry_id){
+            $this->authorize("gravityforms_edit_entries");
+
+            if(is_array($property_values)){
+                foreach($property_values as $key => $property_value){
+                    $result = GFAPI::update_entry_property($entry_id, $key, $property_value);
+                    if(is_wp_error($result)){
+                        break;
+                    }
+                }
+
+                if (is_wp_error($result)) {
+                    $response = $this->get_error_response($result);
+                    $status   = $this->get_error_status($result);
+                } else {
+                    $status   = 200;
+                    $response = __("Success", "gravityforms");
+                }
+
+            } else {
+                $status   = 400;
+                if(empty($property_values)){
+                    $response = __("No property values were found in the request body", "gravityforms");
+                } else {
+                    $response = __("Property values should be sent as an array", "gravityforms");
+                }
+            }
+
+            $this->end($status, $response);
+
         }
 
         public function post_forms($data) {
@@ -743,9 +823,9 @@ if (class_exists("GFForms")) {
 
             if (is_wp_error($form_ids) || count($form_ids) == 0) {
                 $response = $this->get_error_response($form_ids);
-                $status = $this->get_error_status($form_ids);
+                $status   = $this->get_error_status($form_ids);
             } else {
-                $status = 201;
+                $status   = 201;
                 $response = $form_ids;
             }
 
@@ -763,9 +843,9 @@ if (class_exists("GFForms")) {
 
             if (is_wp_error($result)) {
                 $response = $this->get_error_response($result);
-                $status = $this->get_error_status($result);
+                $status   = $this->get_error_status($result);
             } else {
-                $status = 200;
+                $status   = 200;
                 $response = empty($form_id) ? __("Forms updated successfully", "gravityforms") : __("Form updated successfully", "gravityforms");
             }
 
@@ -791,9 +871,9 @@ if (class_exists("GFForms")) {
 
             if (isset($result) && is_wp_error($result)) {
                 $response = $this->get_error_response($result);
-                $status = $this->get_error_status($result);
+                $status   = $this->get_error_status($result);
             } else {
-                $status = 200;
+                $status   = 200;
                 $response = sprintf(__("Entries deleted successfully: %d", "gravityforms"), $count);
             }
 
@@ -803,9 +883,9 @@ if (class_exists("GFForms")) {
         public function get_entries($entry_ids, $form_ids = null, $schema = "", $field_ids = array()) {
 
             $this->authorize("gravityforms_view_entries");
-            $status = 200;
+            $status   = 200;
             $response = array();
-            $result = array();
+            $result   = array();
             if ($entry_ids) {
 
                 if (is_array($entry_ids)) {
@@ -836,6 +916,9 @@ if (class_exists("GFForms")) {
                 $sort_key = isset($_GET["sorting"]["key"]) && !empty($_GET["sorting"]["key"]) ? $_GET["sorting"]["key"] : "id";
                 $sort_dir = isset($_GET["sorting"]["direction"]) && !empty($_GET["sorting"]["direction"]) ? $_GET["sorting"]["direction"] : "DESC";
                 $sorting  = array('key' => $sort_key, 'direction' => $sort_dir);
+                if(isset($_GET["sorting"]["is_numeric"])){
+                    $sorting["is_numeric"] = $_GET["sorting"]["is_numeric"];
+                }
 
                 //paging parameters
                 $page_size = isset($_GET["paging"]["page_size"]) ? intval($_GET["paging"]["page_size"]) : 10;
@@ -867,7 +950,7 @@ if (class_exists("GFForms")) {
 
             if (is_wp_error($result)) {
                 $response = $this->get_error_response($result);
-                $status = $this->get_error_status($result);
+                $status   = $this->get_error_status($result);
             }
 
             $this->end($status, $response);
@@ -889,14 +972,14 @@ if (class_exists("GFForms")) {
         public function get_forms($form_ids = null, $schema = "") {
 
             $this->authorize("gravityforms_edit_forms");
-            $status = 200;
+            $status   = 200;
             $response = array();
             if (empty($form_ids)) {
                 $forms = RGFormsModel::get_forms(true);
                 foreach ($forms as $form) {
-                    $form_id          = $form->id;
-                    $totals           = GFFormsModel::get_form_counts($form_id);
-                    $form_info        = array(
+                    $form_id            = $form->id;
+                    $totals             = GFFormsModel::get_form_counts($form_id);
+                    $form_info          = array(
                         "id"      => $form_id,
                         "title"   => $form->title,
                         "entries" => rgar($totals, "total")
@@ -914,10 +997,10 @@ if (class_exists("GFForms")) {
                     $result = GFAPI::get_form($form_ids);
                     if (is_wp_error($result)) {
                         $response = $this->get_error_response($result);
-                        $status = $this->get_error_status($result);
-                    } elseif (!$result){
+                        $status   = $this->get_error_status($result);
+                    } elseif (!$result) {
                         $this->die_not_found();
-                    } else{
+                    } else {
                         $response = $result;
                     }
 
@@ -927,7 +1010,6 @@ if (class_exists("GFForms")) {
 
             $this->end($status, $response);
         }
-
 
 
         // RESULTS
@@ -1138,7 +1220,7 @@ if (class_exists("GFForms")) {
 
             $form = GFAPI::get_form($form_id);
 
-            if(!$form)
+            if (!$form)
                 self::die_not_found();
 
             // for the Web API return all fields
@@ -1163,7 +1245,7 @@ if (class_exists("GFForms")) {
             // check for valid cached results first
             if (!empty($data) && "complete" == rgar($data, "status") && !$cache_expired) {
                 $results = $data;
-                $status = 200;
+                $status  = 200;
                 if (isset($results["progress"]))
                     unset($results["progress"]);
             } else {
@@ -1311,7 +1393,7 @@ if (class_exists("GFForms")) {
             if (time() >= $expires)
                 return false;
 
-            $is_valid = $signature == $calculated_sig;
+            $is_valid = $signature == $calculated_sig || $signature == rawurlencode($calculated_sig);
 
             return $is_valid;
         }
@@ -1323,8 +1405,8 @@ if (class_exists("GFForms")) {
             return $sig;
         }
 
-        public function end($status, $response){
-            $output["status"] = $status;
+        public static function end($status, $response) {
+            $output["status"]   = $status;
             $output["response"] = $response;
 
             // PHP > 5.3
@@ -1340,11 +1422,11 @@ if (class_exists("GFForms")) {
         }
 
         public function die_not_authorized() {
-            $this->end(401,  __("Not authorized", "gravityforms"));
+            $this->end(401, __("Not authorized", "gravityforms"));
         }
 
         public function die_permission_denied() {
-            $this->end(401,  __("Permission denied", "gravityforms"));
+            $this->end(401, __("Permission denied", "gravityforms"));
         }
 
         public function die_bad_request() {
@@ -1363,12 +1445,13 @@ if (class_exists("GFForms")) {
             $this->end(500, __("Internal Error", "gravityforms"));
         }
 
-        public function get_error_response($wp_error){
+        public function get_error_response($wp_error) {
             $response["code"]    = $wp_error->get_error_code();
             $response["message"] = $wp_error->get_error_message();
-            $data              = $wp_error->get_error_data();
+            $data                = $wp_error->get_error_data();
             if ($data)
                 $output["data"] = $data;
+
             return $response;
         }
 
@@ -1400,7 +1483,8 @@ if (class_exists("GFForms")) {
             if (empty($settings))
                 die();
 
-            $data["site"]        = site_url();
+            $data["url"]        = site_url();
+            $data["name"]        = get_bloginfo();
             $data["public_key"]  = rgar($settings, "public_key");
             $data["private_key"] = rgar($settings, "private_key");
 

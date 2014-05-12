@@ -1,0 +1,61 @@
+{% block html_head_container %}
+    {% include 'html-header.twig' %}
+    {% block head %}
+    {% endblock %}
+    </head>
+{% endblock %}
+    <body class="{{body_class}}" data-template="base.twig">
+        <section id="content" role="main" class="content-wrapper">
+		        {% block header %}
+					<header class="header" role="banner">
+					<div class="top-level container">
+						<div class="header-inner">
+							<div class="row">
+								<div class="col-md-4">
+								<a href="{{site.url}}"><img class="logo" src="{{get_template_directory_uri()~'/library/images/bayside-white.svg}}"></a>
+								</div>
+								<div class="col-md-4">
+									<select>
+									<!--
+									This runs through all oft he blogs and returns custom links. Check out "theNewURL()" in bones.php
+									$blog_list = wp_get_sites();
+									//Todo:: SORTBY BLOG NUMBER
+									foreach ($blog_list as $blog) {
+										$blogID = $blog['blog_id'];	
+										// echo '<a href="' . theNewURL($blogID) . '">' . theNewURL($blogID) . '</a> ';
+										echo '<option>'. theNewURL($blogID) .'</option>';
+									} -->
+									</select>
+								</div>
+								<div class="col-md-3">
+									<form class="search">
+										<input class="form-control" type="text">
+										<button class=""><i class="fa fa-search"></i></button>
+									</form>
+								</div>
+							</div>
+						</div>
+					</div>
+					
+					<nav class="header">
+				        <div class="container mainnav">
+					        <div class="nav top-nav clearfix">
+						        <ul>
+								   <li><a id="about" href="javascript:void(0)">About</a></li><!--
+								   --><li><a id="events" href="javascript:void(0)">Events</a></li><!--
+								   --><li><a id="campuses" href="javascript:void(0)">Campuses</a></li><!--
+								   --><li><a id="ministries" href="javascript:void(0)">Ministries</a></li><!--
+								   --><li><a id="media" href="javascript:void(0)">Media</a></li><!--
+								   --><li><a id="give" href="javascript:void(0)">Give</a></li>
+						        </ul>
+					        </div>
+				        </div>
+				    </nav>	
+				</header>	
+		        {% endblock %}
+	        {% block footer %}
+	        	{% include 'footer.twig' %}
+	        {% endblock %}
+        </section>
+    </body>
+</html>

@@ -1,5 +1,9 @@
 <?php
 
+if(!class_exists('GFForms')){
+    die();
+}
+
 class GFFormSettings {
 
     public static function form_settings_page() {
@@ -1015,7 +1019,7 @@ class GFFormSettings {
                 <input type="hidden" id="confirmation_id" name="confirmation_id" value="<?php echo $confirmation_id; ?>" />
                 <input type="hidden" id="form_id" name="form_id" value="<?php echo $form_id; ?>" />
                 <input type="hidden" id="is_default" name="is_default" value="<?php echo rgget("isDefault", $confirmation) ?>" />
-                <input type="hidden" id="conditional_logic" name="conditional_logic" value='<?php echo json_encode(rgget('conditionalLogic', $confirmation)); ?>' />
+                <input type="hidden" id="conditional_logic" name="conditional_logic" value="<?php echo htmlentities(json_encode(rgget('conditionalLogic', $confirmation))); ?>" />
 
                 <p class="submit">
                     <input type="submit" name="save" value="<?php _e('Save Confirmation', 'gravityforms'); ?>" onclick="StashConditionalLogic(event);" class="button-primary">
@@ -1320,6 +1324,9 @@ class GFFormSettings {
 
         // allow user to filter confirmation before save
         $confirmation = apply_filters("gform_pre_confirmation_save_{$form['id']}", apply_filters('gform_pre_confirmation_save', $confirmation, $form), $form);
+
+        // trim values
+        $confirmation = GFFormsModel::trim_conditional_logic_values_from_element($confirmation, $form);
 
         // add current confirmation to confirmations array
         $form['confirmations'][$confirmation['id']] = $confirmation;

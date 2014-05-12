@@ -3,7 +3,7 @@
   Plugin Name: ACF PHP Recovery Tool
   Description: Converts your PHP export back-in as editable fields for when you lose the original database and XML.
   Author: Seamus Leahy
-  Version: 0.1
+  Version: 0.2
  */
 
 function acf_php_recovery_menu() {
@@ -33,26 +33,34 @@ function acf_php_recovery_page() {
 
         // Meta values
         // Location: Rules and 'All or Any'
-        foreach($fieldset['location'] as $key => $val) {
-          add_post_meta( $post_id, $key, $val, true);
+        foreach($fieldset['location'] as $group_id => $group) {
+          if( is_array( $group ) ) {
+            foreach( $group as $rule_id => $rule ) {
+              $rule['order_no'] = $rule_id;
+              $rule['group_no'] = $group_id;
+              add_post_meta( $post_id, 'rule', $rule, false );
+            }
+          }
         }
+
 
         // Options: position, layout, hide_on_screen
         foreach($fieldset['options'] as $key => $val) {
           add_post_meta( $post_id, $key, $val, true);
         }
-        
+
+        // TODO the location/rules
+
         // Fields
-		$order_no = 0;
-		foreach($fieldset['fields'] as $field) {
-			if(isset($field['order_no'])) :
-				$order_no = max($order_no,$field['order_no']);
-			else:
-				$field['order_no'] = $order_no++;
-			endif;
-			add_post_meta( $post_id, $field['key'], $field, true);
-		}
-        
+        $order_no = 0; // Keep track of the ordering of the field for display purposes
+        foreach( $fieldset['fields'] as $field ) {
+          if( isset($field['order_no']) ) {
+            $order_no = max( $order_no, $field['order_no'] );
+          } else {
+            $field['order_no'] = $order_no++;
+          }
+          add_post_meta( $post_id, $field['key'], $field, true);
+        }
 
         // For displaying the success message
         $imported[] = array(
@@ -81,6 +89,7 @@ function acf_php_recovery_page() {
           <?php
         }
       ?>
+        <li><strong><?php _e( 'Remove the PHP defined fields! The duplicate field IDs interfer with the editing of the fields.' ); ?></strong></li>
       </ul>
       </div>
     <?php

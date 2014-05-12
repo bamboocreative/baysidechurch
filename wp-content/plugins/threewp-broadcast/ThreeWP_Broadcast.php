@@ -6,7 +6,7 @@ Author URI:		http://www.plainview.se
 Description:	Broadcast / multipost a post, with attachments, custom fields, tags and other taxonomies to other blogs in the network.
 Plugin Name:	ThreeWP Broadcast
 Plugin URI:		http://plainview.se/wordpress/threewp-broadcast/
-Version:		2.11
+Version:		2.21
 */
 
 namespace threewp_broadcast;
@@ -17,6 +17,7 @@ require_once( 'include/vendor/autoload.php' );
 
 use \plainview\sdk\collections\collection;
 use \threewp_broadcast\broadcast_data\blog;
+use \plainview\sdk\html\div;
 
 class ThreeWP_Broadcast
 	extends \threewp_broadcast\ThreeWP_Broadcast_Base
@@ -84,7 +85,7 @@ class ThreeWP_Broadcast
 	**/
 	public $permalink_cache;
 
-	public $plugin_version = 2.11;
+	public $plugin_version = 2.21;
 
 	protected $sdk_version_required = 20130505;		// add_action / add_filter
 
@@ -92,13 +93,16 @@ class ThreeWP_Broadcast
 		'blogs_to_hide' => 5,								// How many blogs to auto-hide
 		'broadcast_internal_custom_fields' => false,		// Broadcast internal custom fields?
 		'canonical_url' => true,							// Override the canonical URLs with the parent post's.
+		'clear_post' => true,								// Clear the post before broadcasting.
 		'custom_field_whitelist' => '_wp_page_template _wplp_ _aioseop_',				// Internal custom fields that should be broadcasted.
 		'custom_field_blacklist' => '',						// Internal custom fields that should not be broadcasted.
 		'database_version' => 0,							// Version of database and settings
+		'debug' => false,									// Display debug information
+		'debug_ips' => '',									// List of IP addresses that can see debug information, when enabled.
 		'save_post_priority' => 640,						// Priority of save_post action. Higher = lets other plugins do their stuff first
-		'obsolescence_notice_1' => false,					// Has the user replied to the obsolescence notice?
 		'override_child_permalinks' => false,				// Make the child's permalinks link back to the parent item?
 		'post_types' => 'post page',						// Custom post types which use broadcasting
+		'existing_attachments' => 'use',					// What to do with existing attachments: use, overwrite, randomize
 		'role_broadcast' => 'super_admin',					// Role required to use broadcast function
 		'role_link' => 'super_admin',						// Role required to use the link function
 		'role_broadcast_as_draft' => 'super_admin',			// Role required to broadcast posts as templates
@@ -127,13 +131,17 @@ class ThreeWP_Broadcast
 		$this->add_filter( 'threewp_broadcast_add_meta_box' );
 		$this->add_filter( 'threewp_broadcast_admin_menu', 100 );
 		$this->add_filter( 'threewp_broadcast_broadcast_post' );
-		$this->add_filter( 'threewp_broadcast_get_user_writable_blogs' );
+		$this->add_filter( 'threewp_broadcast_get_user_writable_blogs', 11 );		// Allow other plugins to do this first.
+		$this->add_filter( 'threewp_broadcast_get_post_types', 9 );					// Add our custom post types to the array of broadcastable post types.
 		$this->add_action( 'threewp_broadcast_manage_posts_custom_column', 9 );		// Just before the standard 10.
+		$this->add_action( 'threewp_broadcast_maybe_clear_post', 11 );
 		$this->add_action( 'threewp_broadcast_menu', 9 );
 		$this->add_action( 'threewp_broadcast_menu', 'threewp_broadcast_menu_final', 100 );
 		$this->add_action( 'threewp_broadcast_prepare_broadcasting_data' );
 		$this->add_filter( 'threewp_broadcast_prepare_meta_box', 9 );
 		$this->add_filter( 'threewp_broadcast_prepare_meta_box', 'threewp_broadcast_prepared_meta_box', 100 );
+		$this->add_action( 'threewp_broadcast_wp_insert_term', 9 );
+		$this->add_action( 'threewp_broadcast_wp_update_term', 9 );
 
 		if ( $this->get_site_option( 'canonical_url' ) )
 			$this->add_action( 'wp_head', 1 );
@@ -255,10 +263,7 @@ class ThreeWP_Broadcast
 
 		if ( $db_ver < 5 )
 		{
-			$query = sprintf( "ALTER TABLE `%s` ADD `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'ID of row' FIRST;",
-				$this->broadcast_data_table()
-			);
-			$this->query( $query );
+			$this->create_broadcast_data_id_column();
 			$db_ver = 5;
 		}
 
@@ -284,90 +289,6 @@ class ThreeWP_Broadcast
 	{
 		$maintenance = new maintenance\controller;
 		echo $maintenance;
-	}
-
-	/**
-		@brief		Shows the obsolescence notice.
-		@since		20131122
-	**/
-	public function admin_menu_obsolescence()
-	{
-		$form = $this->form2();
-		$r = '';
-
-		$cbs_do = $form->checkboxes( 'i_do' )
-			->label( 'I do...' )
-			->option( 'Restrict drafts to certain roles', 'role_for_drafts' )
-			->option( 'Restrict scheduled posts to certain roles', 'role_for_scheduled' )
-			;
-
-		$cbs_do->input( 'i_do_role_for_drafts' )->description( 'I need a role to specifically restrict the broadcasting of drafts.' );
-		$cbs_do->input( 'i_do_role_for_scheduled' )->description( 'I need a role to specifically restrict the broadcasting of scheduled (future) posts.' );
-
-		$cbs_do_not = $form->checkboxes( 'i_do_not' )
-			->label( 'I do not...' )
-			->option( 'Broadcast custom fields', 'no_custom_fields' )
-			->option( 'Broadcast taxonomies', 'no_taxonomies' )
-			;
-
-		$cbs_do_not->input( 'i_do_not_no_custom_fields' )->description( 'I never broadcast custom fields and always leave the meta box empty when editing.' );
-		$cbs_do_not->input( 'i_do_not_no_taxonomies' )->description( 'I never broadcast tags / taxonomies and always leave the checkbox empty when editing.' );
-
-		$fs = $form->fieldset( 'fs_other' )
-			->label( 'Other notes' );
-
-		$text = $fs->textarea( 'text' )
-			->label( 'Any other comments?' )
-			->rows( 5, 40 );
-
-		$send = $form->primary_button( 'send_form' )
-			->value( 'Send form to edward@plainview.se' );
-
-		if ( $form->is_posting() )
-		{
-			$form->post()->use_post_values();
-			$mail = $this->mail();
-			$user = wp_get_current_user();
-
-			$mail->from( $user->data->user_email, $user->data->user_login );
-			$mail->to( 'edward@plainview.se', 'Edward Plainview' );
-			$mail->cc( $user->data->user_email, $user->data->user_login );
-			$mail->subject( sprintf( 'Broadcast obsolescence message for version %s', $this->plugin_version ) );
-
-			$html = sprintf( 'Hello Edward!
-
-I selected the following checkboxes: %s %s
-
-And I wrote the following message:
-%s
-
-',
-				implode( ', ', array_values( $cbs_do->get_post_value() ) ),
-				implode( ', ', array_values( $cbs_do_not->get_post_value() ) ),
-				wpautop( $text->get_post_value() )
-			);
-			$html = wpautop( $html );
-			$mail->html( $html );
-			$mail->send();
-			if ( $mail->send_ok() )
-			{
-				$r .= $this->message( 'The e-mail was sent to the author. You should receive a copy of the e-mail.' );
-				$this->update_site_option( 'obsolescence_notice', true );
-			}
-			else
-			{
-				$r .= $this->error( 'The e-mail could not be sent!' );
-			}
-		}
-
-		$r .= $this->html_css();
-		$r .= file_get_contents( __DIR__ . '/html/obsolescence_notice.html' );
-
-		$r .= $form->open_tag();
-		$r .= $form->display_form_table();
-		$r .= $form->close_tag();
-
-		echo $r;
 	}
 
 	public function admin_menu_post_types()
@@ -476,7 +397,7 @@ And I wrote the following message:
 
 		$canonical_url = $fs->checkbox( 'canonical_url' )
 			->checked( $this->get_site_option( 'canonical_url' ) )
-			->description_( 'Child posts have their canonical URLs pointed to the URL of the parent post.' )
+			->description_( "Child posts have their canonical URLs pointed to the URL of the parent post. This automatically disables the canonical URL from Yoast's Wordpress SEO plugin." )
 			->label_( 'Canonical URL' );
 
 		$fs = $form->fieldset( 'custom_field_handling' )
@@ -514,6 +435,11 @@ And I wrote the following message:
 		$fs = $form->fieldset( 'misc' )
 			->label_( 'Miscellaneous' );
 
+		$clear_post = $fs->checkbox( 'clear_post' )
+			->description_( 'The POST PHP variable is data sent when updating posts. Most plugins are fine if the POST is cleared before broadcasting, while others require that the data remains intact. Uncheck this setting if you notice that child posts are not being treated the same on the child blogs as they are on the parent blog.' )
+			->label_( 'Clear POST' )
+			->checked( $this->get_site_option( 'debug', false ) );
+
 		$save_post_priority = $fs->number( 'save_post_priority' )
 			->description_( 'The priority for the save_post hook. Should be after all other plugins have finished modifying the post. Default is 640.' )
 			->label_( 'save_post priority' )
@@ -529,6 +455,33 @@ And I wrote the following message:
 			->required()
 			->size( 3, 3 )
 			->value( $this->get_site_option( 'blogs_to_hide' ) );
+
+		$existing_attachments = $fs->select( 'existing_attachments' )
+			->description_( 'Action to take when attachments with the same filename already exist on the child blog.' )
+			->label_( 'Existing attachments' )
+			->option( 'Use the existing attachment on the child blog', 'use' )
+			->option( 'Overwrite the attachment', 'overwrite' )
+			->option( 'Create a new attachment with a randomized suffix', 'randomize' )
+			->required()
+			->value( $this->get_site_option( 'existing_attachments', 'use' ) );
+
+		$fs = $form->fieldset( 'debug' )
+			->label_( 'Debugging' );
+
+		$fs->markup( 'debug_info' )
+			->p_( "According to the settings below, you are currently%s in debug mode. Don't forget to reload this page after saving the settings.", $this->debugging() ? '' : ' <strong>not</strong>' );
+
+		$debug = $fs->checkbox( 'debug' )
+			->description_( 'Show debugging information in various places.' )
+			->label_( 'Enable debugging' )
+			->checked( $this->get_site_option( 'debug', false ) );
+
+		$debug_ips = $fs->textarea( 'debug_ips' )
+			->description_( 'Only show debugging info to specific IP addresses. Use spaces between IPs. You can also specify part of an IP address. Your address is %s', $_SERVER[ 'REMOTE_ADDR' ] )
+			->label_( 'Debug IPs' )
+			->rows( 5, 16 )
+			->trim()
+			->value( $this->get_site_option( 'debug_ips', '' ) );
 
 		$save = $form->primary_button( 'save' )
 			->value_( 'Save settings' );
@@ -558,12 +511,16 @@ And I wrote the following message:
 			$whitelist = $this->lines_to_string( $whitelist );
 			$this->update_site_option( 'custom_field_whitelist', $whitelist );
 
+			$this->update_site_option( 'clear_post', $clear_post->is_checked() );
 			$this->update_site_option( 'save_post_priority', $save_post_priority->get_post_value() );
 			$this->update_site_option( 'blogs_to_hide', $blogs_to_hide->get_post_value() );
+			$this->update_site_option( 'existing_attachments', $existing_attachments->get_post_value() );
+
+			$this->update_site_option( 'debug', $debug->is_checked() );
+			$this->update_site_option( 'debug_ips', $debug_ips->get_filtered_post_value() );
+
 			$this->message( 'Options saved!' );
 		}
-
-		$r .= $this->obsolescence_notice();
 
 		$r .= $form->open_tag();
 		$r .= $form->display_form_table();
@@ -580,8 +537,77 @@ And I wrote the following message:
 		$tabs->tab( 'settings' )		->callback_this( 'admin_menu_settings' )		->name_( 'Settings' );
 		$tabs->tab( 'maintenance' )		->callback_this( 'admin_menu_maintenance' )		->name_( 'Maintenance' );
 		$tabs->tab( 'post_types' )		->callback_this( 'admin_menu_post_types' )		->name_( 'Custom post types' );
-		$tabs->tab( 'obsolescence' )	->callback_this( 'admin_menu_obsolescence' )	->name_( 'Obsolescence notice' );
 		$tabs->tab( 'uninstall' )		->callback_this( 'admin_uninstall' )			->name_( 'Uninstall' );
+
+		echo $tabs;
+	}
+
+	public function broadcast_menu_tabs()
+	{
+		$this->load_language();
+
+		$tabs = $this->tabs()
+			->default_tab( 'user_broadcast_info' )
+			->get_key( 'action' );
+
+		if ( isset( $_GET[ 'action' ] ) )
+		{
+			switch( $_GET[ 'action' ] )
+			{
+				case 'user_delete':
+					$tabs->tab( 'user_delete' )
+						->heading_( 'Delete the child post' )
+						->name_( 'Delete child' );
+					break;
+				case 'user_delete_all':
+					$tabs->tab( 'user_delete_all' )
+						->heading_( 'Delete all child posts' )
+						->name_( 'Delete all children' );
+					break;
+				case 'user_find_orphans':
+					$tabs->tab( 'user_find_orphans' )
+						->heading_( 'Find orphans' )
+						->name_( 'Find orphans' );
+					break;
+				case 'user_restore':
+					$tabs->tab( 'user_restore' )
+						->heading_( 'Restore the child post from the trash' )
+						->name_( 'Restore child' );
+					break;
+				case 'user_restore_all':
+					$tabs->tab( 'user_restore_all' )
+						->heading_( 'Restore all of the child posts from the trash' )
+						->name_( 'Restore all' );
+					break;
+				case 'user_trash':
+					$tabs->tab( 'user_trash' )
+						->heading_( 'Trash the child post' )
+						->name_( 'Trash child' );
+					break;
+				case 'user_trash_all':
+					$tabs->tab( 'user_trash_all' )
+						->heading_( 'Trash all child posts' )
+						->name_( 'Trash all children' );
+					break;
+				case 'user_unlink':
+					$tabs->tab( 'user_unlink' )
+						->heading_( 'Unlink the child post' )
+						->name_( 'Unlink child' );
+					break;
+				case 'user_unlink_all':
+					$tab = $tabs->tab( 'user_unlink_all' )
+						->callback_this( 'user_unlink' )
+						->heading_( 'Unlink all child posts' )
+						->name_( 'Unlink all children' );
+					break;
+			}
+		}
+
+		$tabs->tab( 'user_broadcast_info' )->name_( 'Broadcast information' );
+
+		$action = new actions\broadcast_menu_tabs();
+		$action->tabs = $tabs;
+		$action->apply();
 
 		echo $tabs;
 	}
@@ -795,6 +821,14 @@ And I wrote the following message:
 		$row->th()->text( 'Key' );
 		$row->th()->text( 'Value' );
 
+		if ( $this->debugging() )
+		{
+			// Debug
+			$row = $table->body()->row();
+			$row->td()->text( 'Debugging' );
+			$row->td()->text( 'Enabled' );
+		}
+
 		// Broadcast version
 		$row = $table->body()->row();
 		$row->td()->text( 'Broadcast version' );
@@ -827,71 +861,35 @@ And I wrote the following message:
 		$text = sprintf( '%s seconds', ini_get ( 'max_execution_time' ) );
 		$row->td()->text( $text );
 
+		// PHP maximum memory limit
+		$row = $table->body()->row();
+		$row->td()->text( 'PHP memory limit' );
+		$text = ini_get( 'memory_limit' );
+		$row->td()->text( $text );
+
+		// WP maximum memory limit
+		$row = $table->body()->row();
+		$row->td()->text( 'Wordpress memory limit' );
+		$text = $this->p( WP_MEMORY_LIMIT . "
+
+This can be increased by adding the following to your wp-config.php:
+
+<code>define('WP_MEMORY_LIMIT', '512M');</code>
+" );
+		$row->td()->text( $text );
+
+		// Debug info
+		$row = $table->body()->row();
+		$row->td()->text( 'Debug code' );
+		$text = WP_MEMORY_LIMIT;
+		$text = $this->p( "Add the following lines to your wp-config.php to help find out why errors or blank screens are occurring:
+
+<code>ini_set('display_errors','On');</code>
+<code>define('WP_DEBUG', true);</code>
+" );
+		$row->td()->text( $text );
+
 		echo $table;
-	}
-
-	public function user_menu_tabs()
-	{
-		$this->load_language();
-
-		$tabs = $this->tabs()->default_tab( 'user_broadcast_info' )->get_key( 'action' );
-
-		if ( isset( $_GET[ 'action' ] ) )
-		{
-			switch( $_GET[ 'action' ] )
-			{
-				case 'user_delete':
-					$tabs->tab( 'user_delete' )
-						->heading_( 'Delete the child post' )
-						->name_( 'Delete child' );
-					break;
-				case 'user_delete_all':
-					$tabs->tab( 'user_delete_all' )
-						->heading_( 'Delete all child posts' )
-						->name_( 'Delete all children' );
-					break;
-				case 'user_find_orphans':
-					$tabs->tab( 'user_find_orphans' )
-						->heading_( 'Find orphans' )
-						->name_( 'Find orphans' );
-					break;
-				case 'user_restore':
-					$tabs->tab( 'user_restore' )
-						->heading_( 'Restore the child post from the trash' )
-						->name_( 'Restore child' );
-					break;
-				case 'user_restore_all':
-					$tabs->tab( 'user_restore_all' )
-						->heading_( 'Restore all of the child posts from the trash' )
-						->name_( 'Restore all' );
-					break;
-				case 'user_trash':
-					$tabs->tab( 'user_trash' )
-						->heading_( 'Trash the child post' )
-						->name_( 'Trash child' );
-					break;
-				case 'user_trash_all':
-					$tabs->tab( 'user_trash_all' )
-						->heading_( 'Trash all child posts' )
-						->name_( 'Trash all children' );
-					break;
-				case 'user_unlink':
-					$tabs->tab( 'user_unlink' )
-						->heading_( 'Unlink the child post' )
-						->name_( 'Unlink child' );
-					break;
-				case 'user_unlink_all':
-					$tab = $tabs->tab( 'user_unlink_all' )
-						->callback_this( 'user_unlink' )
-						->heading_( 'Unlink all child posts' )
-						->name_( 'Unlink all children' );
-					break;
-			}
-		}
-
-		$tabs->tab( 'user_broadcast_info' )->name_( 'Broadcast information' );
-
-		echo $tabs;
 	}
 
 	/**
@@ -1143,8 +1141,9 @@ And I wrote the following message:
 		// If it's true, then show it to all post types!
 		if ( $this->display_broadcast_meta_box === true )
 		{
-			$post_types = $this->get_site_option( 'post_types' );
-			foreach( explode( ' ', $post_types ) as $post_type )
+			$action = new actions\get_post_types;
+			$action->apply();
+			foreach( $action->post_types as $post_type )
 				add_meta_box( 'threewp_broadcast', $this->_( 'Broadcast' ), array( &$this, 'threewp_broadcast_add_meta_box' ), $post_type, 'side', 'low' );
 			return;
 		}
@@ -1157,7 +1156,11 @@ And I wrote the following message:
 		$filter = new filters\get_user_writable_blogs( $this->user_id() );
 		$blogs = $filter->apply()->blogs;
 		if ( count( $blogs ) <= 1 )
-			$this->display_broadcast_meta_box = false;
+		{
+			// If the user is debugging, show the box anyway.
+			if ( ! $this->debugging() )
+				$this->display_broadcast_meta_box = false;
+		}
 
 		// Convert to a bool value
 		$this->display_broadcast_meta_box = ( $this->display_broadcast_meta_box == true );
@@ -1270,12 +1273,17 @@ And I wrote the following message:
 		if ( $this->is_broadcasting() )
 			return;
 
+		// No post?
+		if ( count( $_POST ) < 1 )
+			return;
+
+		// Nothing of interest in the post?
+		if ( ! isset( $_POST[ 'broadcast' ] ) )
+			return;
+
 		// Is this post a child?
 		$broadcast_data = $this->get_post_broadcast_data( get_current_blog_id(), $post_id );
 		if ( $broadcast_data->get_linked_parent() !== false )
-			return;
-
-		if ( count( $_POST ) < 1 )
 			return;
 
 		// No permission.
@@ -1285,6 +1293,8 @@ And I wrote the following message:
 		// Save the user's last settings.
 		if ( isset( $_POST[ 'broadcast' ] ) )
 			$this->save_last_used_settings( $this->user_id(), $_POST[ 'broadcast' ] );
+
+		$this->debug( 'We are currently on blog %s (%s).', get_bloginfo( 'blogname' ), get_current_blog_id() );
 
 		$post = get_post( $post_id );
 
@@ -1296,8 +1306,11 @@ And I wrote the following message:
 		$action->apply();
 
 		// Post the form.
-		$meta_box_data->form->post();
-		$meta_box_data->form->use_post_values();
+		if ( ! $meta_box_data->form->has_posted )
+		{
+			$meta_box_data->form->post();
+			$meta_box_data->form->use_post_values();
+		}
 
 		$broadcasting_data = new broadcasting_data( [
 			'_POST' => $_POST,
@@ -1398,10 +1411,17 @@ And I wrote the following message:
 	**/
 	public function threewp_broadcast_prepare_meta_box( $action )
 	{
-		if ( $action->is_applied() )
-			return;
-
 		$meta_box_data = $action->meta_box_data;	// Convenience.
+
+		if ( $this->debugging() )
+			$meta_box_data->html->put( 'debug', $this->p_( 'Broadcast is in debug mode. More information than usual will be shown.' ) );
+
+		if ( $action->is_applied() )
+		{
+			if ( $this->debugging() )
+				$meta_box_data->html->put( 'debug_applied', $this->p_( 'Broadcast is not preparing the meta box because it has already been applied.' ) );
+			return;
+		}
 
 		if ( $meta_box_data->broadcast_data->get_linked_parent() !== false)
 		{
@@ -1424,8 +1444,11 @@ And I wrote the following message:
 		$post_type = $meta_box_data->post->post_type;
 		$post_type_object = get_post_type_object( $post_type );
 		$post_type_supports_thumbnails = post_type_supports( $post_type, 'thumbnail' );
-		$post_type_supports_custom_fields = post_type_supports( $post_type, 'custom-fields' );
 		$post_type_is_hierarchical = $post_type_object->hierarchical;
+
+		// 20140327 Because so many plugins create broken post types, assume that all post types support custom fields.
+		// $post_type_supports_custom_fields = post_type_supports( $post_type, 'custom-fields' );
+		$post_type_supports_custom_fields = true;
 
 		if ( is_super_admin() || $this->role_at_least( $this->get_site_option( 'role_link' ) ) )
 		{
@@ -1523,6 +1546,54 @@ And I wrote the following message:
 		// And some CSS
 		$meta_box_data->css->put( 'threewp_broadcast', $this->paths[ 'url' ] . '/css/css.scss.min.css'  );
 
+		if ( $this->debugging() )
+		{
+			$meta_box_data->html->put( 'debug_info_1', sprintf( '
+				<h3>Debug info</h3>
+				<ul>
+				<li>High enough role to link: %s</li>
+				<li>Post supports custom fields: %s</li>
+				<li>Post supports thumbnails: %s</li>
+				<li>High enough role to broadcast custom fields: %s</li>
+				<li>High enough role to broadcast taxonomies: %s</li>
+				<li>Blogs available to user: %s</li>
+				</ul>',
+					( $this->role_at_least( $this->get_site_option( 'role_link' ) ) ? 'yes' : 'no' ),
+					( $post_type_supports_custom_fields ? 'yes' : 'no' ),
+					( $post_type_supports_thumbnails ? 'yes' : 'no' ),
+					( $this->role_at_least( $this->get_site_option( 'role_custom_fields' ) ) ? 'yes' : 'no' ),
+					( $this->role_at_least( $this->get_site_option( 'role_taxonomies' ) ) ? 'yes' : 'no' ),
+					count( $blogs )
+				)
+			);
+
+			// Display a list of actions that have hooked into save_post
+			global $wp_filter;
+			$filters = $wp_filter[ 'save_post' ];
+			ksort( $filters );
+			$save_post_callbacks = [];
+			//$wp_filter[$tag][$priority][$idx] = array('function' => $function_to_add, 'accepted_args' => $accepted_args);
+			foreach( $filters as $priority => $callbacks )
+			{
+				foreach( $callbacks as $callback )
+				{
+					$function = $callback[ 'function' ];
+					if ( is_array( $function ) )
+					{
+						if ( is_object( $function[ 0 ] ) )
+							$function[ 0 ] = get_class( $function[ 0 ] );
+						$function = sprintf( '%s::%s', $function[ 0 ], $function[ 1 ] );
+					}
+					$function = sprintf( '%s %s', $function, $priority );
+					$save_post_callbacks[] = $function;
+				}
+			}
+			$meta_box_data->html->put( 'debug_save_post_callbacks', sprintf( '%s%s',
+				$this->p_( 'Plugins that have hooked into save_post:' ),
+				$this->implode_html( $save_post_callbacks )
+			) );
+		}
+
 		$action->applied();
 	}
 
@@ -1570,19 +1641,24 @@ And I wrote the following message:
 
 		$filter->blogs->sort_logically();
 		$filter->applied();
+		return $filter;
 	}
 
 	/**
-		@brief		Fill the broadcasting_data object with information.
+		@brief		Convert the post_type site option to an array in the action.
+		@since		2014-02-22 10:33:57
+	**/
+	public function threewp_broadcast_get_post_types( $action )
+	{
+		$post_types = $this->get_site_option( 'post_types' );
+		$post_types = explode( ' ', $post_types );
+		foreach( $post_types as $post_type )
+			$action->post_types[ $post_type ] = $post_type;
+	}
 
-		@details
-
-		The difference between the calculations in this filter and the actual broadcast_post method is that this filter
-
-		1) does access checks
-		2) tells broadcast_post() WHAT to broadcast, not how.
-
-		@since		20131004
+	/**
+		@brief		Handle the display of the custom column.
+		@since		2014-04-18 08:30:19
 	**/
 	public function threewp_broadcast_manage_posts_custom_column( $filter )
 	{
@@ -1591,10 +1667,9 @@ And I wrote the following message:
 			$parent = $filter->broadcast_data->get_linked_parent();
 			$parent_blog_id = $parent[ 'blog_id' ];
 			switch_to_blog( $parent_blog_id );
-			$filter->html->put(
-				'linked_from',
-				$this->_(sprintf( 'Linked from %s', '<a href="' . get_bloginfo( 'url' ) . '/wp-admin/post.php?post=' .$parent[ 'post_id' ] . '&action=edit">' . get_bloginfo( 'name' ) . '</a>' ) )
-			);
+
+			$html = $this->_(sprintf( 'Linked from %s', '<a href="' . get_bloginfo( 'url' ) . '/wp-admin/post.php?post=' .$parent[ 'post_id' ] . '&action=edit">' . get_bloginfo( 'name' ) . '</a>' ) );
+			$filter->html->put( 'linked_from', $html );
 			restore_current_blog();
 		}
 		elseif ( $filter->broadcast_data->has_linked_children() )
@@ -1606,111 +1681,151 @@ And I wrote the following message:
 				// Only display if there is more than one child post
 				if ( count( $children ) > 1 )
 				{
-					$url_delete_all = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_delete_all&amp;post=%s", $filter->parent_post_id );
-					$url_delete_all = wp_nonce_url( $url_delete_all, 'broadcast_delete_all_' . $filter->parent_post_id );
+					$strings = new \threewp_broadcast\collections\strings_with_metadata;
 
-					$url_restore_all = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_restore_all&amp;post=%s", $filter->parent_post_id );
-					$url_restore_all = wp_nonce_url( $url_restore_all, 'broadcast_restore_all_' . $filter->parent_post_id );
+					$strings->set( 'div_open', '<div class="row-actions broadcasted_blog_actions">' );
+					$strings->set( 'text_all', $this->_( 'All' ) );
+					$strings->set( 'div_small_open', '<small>' );
 
-					$url_trash_all = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_trash_all&amp;post=%s", $filter->parent_post_id );
-					$url_trash_all = wp_nonce_url( $url_trash_all, 'broadcast_trash_all_' . $filter->parent_post_id );
+					$url = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_restore_all&amp;post=%s", $filter->parent_post_id );
+					$url = wp_nonce_url( $url, 'broadcast_restore_all_' . $filter->parent_post_id );
+					$strings->set( 'restore_all_separator', ' | ' );
+					$strings->set( 'restore_all', sprintf( '<a href="%s" title="%s">%s</a>',
+						$url,
+						$this->_( 'Restore all of the children from the trash' ),
+						$this->_( 'Restore' )
+					) );
+
+					$url = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_trash_all&amp;post=%s", $filter->parent_post_id );
+					$url = wp_nonce_url( $url, 'broadcast_trash_all_' . $filter->parent_post_id );
+					$strings->set( 'trash_all_separator', ' | ' );
+					$strings->set( 'trash_all', sprintf( '<a href="%s" title="%s">%s</a>',
+						$url,
+						$this->_( 'Put all of the children in the trash' ),
+						$this->_( 'Trash' )
+					) );
 
 					$url_unlink_all = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_unlink_all&amp;post=%s", $filter->parent_post_id );
 					$url_unlink_all = wp_nonce_url( $url_unlink_all, 'broadcast_unlink_all_' . $filter->parent_post_id );
-
-					$string = sprintf( '
-						<div class="row-actions broadcasted_blog_actions">
-							%s:
-							<small>
-								<a href="%s" title="%s">%s</a>
-								| <a href="%s" title="%s">%s</a>
-								| <a href="%s" title="%s">%s</a>
-								| <span class="trash"><a href="%s" title="%s">%s</a></span>
-							</small>
-						</div>
-					',
-						$this->_( 'All' ),
-						$url_restore_all,
-						$this->_( 'Restore all of the children from the trash' ),
-						$this->_( 'Restore' ),
-						$url_trash_all,
-						$this->_( 'Put all of the children in the trash' ),
-						$this->_( 'Trash' ),
-						$url_unlink_all,
+					$strings->set( 'unlink_all_separator', ' | ' );
+					$strings->set( 'unlink_all', sprintf( '<a href="%s" title="%s">%s</a>',
+						$url,
 						$this->_( 'Unlink all of the child posts' ),
-						$this->_( 'Unlink' ),
-						$url_delete_all,
-						$this->_( 'Permanently all the broadcasted children' ),
+						$this->_( 'Unlink' )
+					) );
+
+					$url = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_delete_all&amp;post=%s", $filter->parent_post_id );
+					$url = wp_nonce_url( $url, 'broadcast_delete_all_' . $filter->parent_post_id );
+					$strings->set( 'delete_all_separator', ' | ' );
+					$strings->set( 'delete_all', sprintf( '<span class="trash"><a href="%s" title="%s">%s</a></span>',
+						$url,
+						$this->_( 'Permanently delete all the broadcasted children' ),
 						$this->_( 'Delete' )
-					);
-					$filter->html->put( 'delete_all', $string );
+					) );
+
+					$strings->set( 'div_small_close', '</small>' );
+					$strings->set( 'div_close', '</div>' );
+
+					$filter->html->put( 'delete_all', $strings );
 				}
 
-				$blogs = new \plainview\sdk\collections\collection;
-				$output = [];
+				$collection = new \threewp_broadcast\collections\strings;
 
 				foreach( $children as $child_blog_id => $child_post_id )
 				{
+					$strings = new \threewp_broadcast\collections\strings_with_metadata;
+
 					$url_child = get_blog_permalink( $child_blog_id, $child_post_id );
 					// The post id is for the current blog, not the target blog.
 
-					$url_delete = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_delete&amp;post=%s&amp;child=%s", $filter->parent_post_id, $child_blog_id );
-					$url_delete = wp_nonce_url( $url_delete, 'broadcast_delete_' . $child_blog_id . '_' . $filter->parent_post_id );
-
-					$url_restore = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_restore&amp;post=%s&amp;child=%s", $filter->parent_post_id, $child_blog_id );
-					$url_restore = wp_nonce_url( $url_restore, 'broadcast_restore_' . $child_blog_id . '_' . $filter->parent_post_id );
-
-					$url_trash = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_trash&amp;post=%s&amp;child=%s", $filter->parent_post_id, $child_blog_id );
-					$url_trash = wp_nonce_url( $url_trash, 'broadcast_trash_' . $child_blog_id . '_' . $filter->parent_post_id );
-
-					$url_unlink = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_unlink&amp;post=%s&amp;child=%s", $filter->parent_post_id, $child_blog_id );
-					$url_unlink = wp_nonce_url( $url_unlink, 'broadcast_unlink_' . $child_blog_id . '_' . $filter->parent_post_id );
-
 					// For get_bloginfo.
 					switch_to_blog( $child_blog_id );
+					$blogname = get_bloginfo( 'blogname' );
+					restore_current_blog();
 
-					$string = sprintf( '
-						<div class="child_blog_name blog_%s">
-							<a class="broadcasted_child" href="%s">
-								%s
-							</a>
-							<span class="row-actions broadcasted_blog_actions">
-								<small>
-								<a href="%s" title="%s">%s</a>
-								| <span><a href="%s" title="%s">%s</a></span>
-								| <span><a href="%s" title="%s">%s</a></span>
-								| <span class="trash"><a href="%s" title="%s">%s</a></span>
-								</small>
-							</span>
-						</div>
-					',
-						$child_blog_id,
-						$url_child,
-						get_bloginfo( 'blogname' ),
-						$url_restore,
+					$strings->metadata()->set( 'child_blog_id', $child_blog_id );
+					$strings->metadata()->set( 'blogname', $blogname );
+
+					$strings->set( 'div_open', sprintf( '<div class="child_blog_name blog_%s">', $child_blog_id ) );
+					$strings->set( 'a_broadcasted_child', sprintf( '<a class="broadcasted_child" href="%s">%s </a>', $url_child, $blogname ) );
+					$strings->set( 'span_row_actions_open', '<span class="row-actions broadcasted_blog_actions">' );
+					$strings->set( 'small_open', '<small>' );
+
+					$url = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_restore&amp;post=%s&amp;child=%s", $filter->parent_post_id, $child_blog_id );
+					$url = wp_nonce_url( $url, 'broadcast_restore_' . $child_blog_id . '_' . $filter->parent_post_id );
+					$strings->set( 'restore_separator', ' | ' );
+					$strings->set( 'restore', sprintf( '<a href="%s" title="%s">%s</a>',
+						$url,
 						$this->_( 'Restore all of the children from the trash' ),
-						$this->_( 'Restore' ),
-						$url_trash,
+						$this->_( 'Restore' )
+					) );
+
+					$url = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_trash&amp;post=%s&amp;child=%s", $filter->parent_post_id, $child_blog_id );
+					$url = wp_nonce_url( $url, 'broadcast_trash_' . $child_blog_id . '_' . $filter->parent_post_id );
+					$strings->set( 'trash_separator', ' | ' );
+					$strings->set( 'trash', sprintf( '<a href="%s" title="%s">%s</a>',
+						$url,
 						$this->_( 'Put this broadcasted child post in the trash' ),
-						$this->_( 'Trash' ),
-						$url_unlink,
+						$this->_( 'Trash' )
+					) );
+
+					$url = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_unlink&amp;post=%s&amp;child=%s", $filter->parent_post_id, $child_blog_id );
+					$url = wp_nonce_url( $url, 'broadcast_unlink_' . $child_blog_id . '_' . $filter->parent_post_id );
+					$strings->set( 'unlink_separator', ' | ' );
+					$strings->set( 'unlink', sprintf( '<a href="%s" title="%s">%s</a>',
+						$url,
 						$this->_( 'Remove link to this broadcasted child post' ),
-						$this->_( 'Unlink' ),
-						$url_delete,
+						$this->_( 'Unlink' )
+					) );
+
+					$url = sprintf( "admin.php?page=threewp_broadcast&amp;action=user_delete&amp;post=%s&amp;child=%s", $filter->parent_post_id, $child_blog_id );
+					$url = wp_nonce_url( $url, 'broadcast_delete_' . $child_blog_id . '_' . $filter->parent_post_id );
+					$strings->set( 'delete_separator', ' | ' );
+					$strings->set( 'delete', sprintf( '<span class="trash"><a href="%s" title="%s">%s</a></span>',
+						$url,
 						$this->_( 'Unlink and delete this broadcasted child post' ),
 						$this->_( 'Delete' )
-					);
+					) );
 
-					$blogs->put( $child_blog_id, $string );
-					$output[ get_bloginfo( 'blogname' ) ] = $string;
-					restore_current_blog();
+					$strings->set( 'small_close', '</small>' );
+					$strings->set( 'span_row_actions_close', '</span>' );
+					$strings->set( 'div_close', '</div>' );
+
+					$collection->set( $blogname, $strings );
 				}
-				ksort( $output );
-				$filter->html->put( 'broadcasted_to', implode( '', $output ) );
-				$filter->blogs = $blogs;
+
+				$collection->sort_by( function( $child )
+				{
+					return $child->metadata()->get( 'blogname' );
+				});
+
+				$filter->html->put( 'broadcasted_to', $collection );
 			}
 		}
 		$filter->applied();
+	}
+
+	/**
+		@brief		Decide what to do with the POST.
+		@since		2014-03-23 23:08:31
+	**/
+	public function threewp_broadcast_maybe_clear_post( $action )
+	{
+		if ( $action->is_applied() )
+		{
+			$this->debug( 'Not maybe clearing the POST.' );
+			return;
+		}
+
+		$clear_post = $this->get_site_option( 'clear_post', true );
+		if ( $clear_post )
+		{
+
+			$this->debug( 'Clearing the POST.' );
+			$action->post = [];
+		}
+		else
+			$this->debug( 'Not clearing the POST.' );
 	}
 
 	/**
@@ -1740,7 +1855,8 @@ And I wrote the following message:
 			return;
 
 		$form = $bcd->meta_box_data->form;
-		$form->post();
+		if ( $form->is_posting() && ! $form->has_posted )
+				$form->post();
 
 		// Collect the list of blogs from the meta box.
 		$blogs_input = $form->input( 'blogs' );
@@ -1759,7 +1875,8 @@ And I wrote the following message:
 
 		$bcd->post_type_object = get_post_type_object( $bcd->post->post_type );
 		$bcd->post_type_supports_thumbnails = post_type_supports( $bcd->post->post_type, 'thumbnail' );
-		$bcd->post_type_supports_custom_fields = post_type_supports( $bcd->post->post_type, 'custom-fields' );
+		//$bcd->post_type_supports_custom_fields = post_type_supports( $bcd->post->post_type, 'custom-fields' );
+		$bcd->post_type_supports_custom_fields = true;
 		$bcd->post_type_is_hierarchical = $bcd->post_type_object->hierarchical;
 
 		$bcd->custom_fields = $form->checkbox( 'custom_fields' )->get_post_value()
@@ -1867,7 +1984,7 @@ And I wrote the following message:
 			$this->_( 'Broadcast' ),
 			'edit_posts',
 			'threewp_broadcast',
-			[ &$this, 'user_menu_tabs' ]
+			[ &$this, 'broadcast_menu_tabs' ]
 		);
 
 		$this->add_submenu_pages();
@@ -1883,6 +2000,82 @@ And I wrote the following message:
 		if ( ! is_a( $broadcasting_data, get_class( new broadcasting_data ) ) )
 			return $broadcasting_data;
 		return $this->broadcast_post( $broadcasting_data );
+	}
+
+	/**
+		@brief		Allows Broadcast plugins to update the term with their own info.
+		@since		2014-04-08 15:12:05
+	**/
+	public function threewp_broadcast_wp_insert_term( $action )
+	{
+		if ( ! isset( $action->term->parent ) )
+			$action->term->parent = 0;
+
+		$term = wp_insert_term(
+			$action->term->name,
+			$action->taxonomy,
+			[
+				'description' => $action->term->description,
+				'parent' => $action->term->parent,
+				'slug' => $action->term->slug,
+			]
+		);
+
+		// Sometimes the search didn't find the term because it's SIMILAR and not exact.
+		// WP will complain and give us the term tax id.
+		if ( is_wp_error( $term ) )
+		{
+			$wp_error = $term;
+			$this->debug( 'Error creating the term: %s. Error was: %s', $action->term->name, serialize( $wp_error->error_data ) );
+			if ( isset( $wp_error->error_data[ 'term_exists' ] ) )
+			{
+				$term_id = $wp_error->error_data[ 'term_exists' ];
+				$this->debug( 'Term exists already with the term ID: %s', $term_id );
+				$term = get_term_by( 'id', $term_id, $action->taxonomy, ARRAY_A );
+			}
+			else
+			{
+				throw new Exception( 'Unable to create a new term.' );
+			}
+		}
+
+		$term_taxonomy_id = $term[ 'term_taxonomy_id' ];
+
+		$this->debug( 'Created the new term %s with the term taxonomy ID of %s.', $action->term->name, $term_taxonomy_id );
+
+		$action->new_term = get_term_by( 'term_taxonomy_id', $term_taxonomy_id, $action->taxonomy, ARRAY_A );
+	}
+
+	/**
+		@brief		[Maybe] update a term.
+		@since		2014-04-10 14:26:23
+	**/
+	public function threewp_broadcast_wp_update_term( $action )
+	{
+		$update = true;
+
+		// If we are given an old term, then we have a chance of checking to see if there should be an update called at all.
+		if ( $action->has_old_term() )
+		{
+			// Assume they match.
+			$update = false;
+			foreach( [ 'name', 'description', 'parent' ] as $key )
+				if ( $action->old_term->$key != $action->new_term->$key )
+					$update = true;
+		}
+
+		if ( $update )
+		{
+			$this->debug( 'Updating the term %s.', $action->new_term->name );
+			wp_update_term( $action->new_term->term_id, $action->taxonomy, array(
+				'description' => $action->new_term->description,
+				'name' => $action->new_term->name,
+				'parent' => $action->new_term->parent,
+			) );
+			$action->updated = true;
+		}
+		else
+			$this->debug( 'Will not update the term %s.', $action->new_term->name );
 	}
 
 	public function untrash_post( $post_id)
@@ -1918,6 +2111,20 @@ And I wrote the following message:
 
 		// Prevent Wordpress from outputting its own canonical.
 		remove_action( 'wp_head', 'rel_canonical' );
+
+		// Remove Canonical Link Added By Yoast WordPress SEO Plugin
+		$this->add_filter( 'wpseo_canonical', 'wp_head_remove_wordpress_seo_canonical' );;
+	}
+
+	/**
+		@brief		Remove Wordpress SEO canonical link so that it doesn't conflict with the parent link.
+		@since		2014-01-16 00:36:15
+	**/
+
+	public function wp_head_remove_wordpress_seo_canonical()
+	{
+		// Tip seen here: http://wordpress.org/support/topic/plugin-wordpress-seo-by-yoast-remove-canonical-tags-in-header?replies=10
+		return false;
 	}
 
 	// --------------------------------------------------------------------------------------------
@@ -1956,11 +2163,16 @@ And I wrote the following message:
 	{
 		$bcd = $broadcasting_data;
 
+		$this->debug( 'Broadcasting the post %s <pre>%s</pre>', $bcd->post->ID, $this->code_export( $bcd->post ) );
+
+		$this->debug( 'The POST was <pre>%s</pre>', $this->code_export( $bcd->_POST ) );
+
 		// For nested broadcasts. Just in case.
 		switch_to_blog( $bcd->parent_blog_id );
 
 		if ( $bcd->link )
 		{
+			$this->debug( 'Linking is enabled.' );
 			// Prepare the broadcast data for linked children.
 			$broadcast_data = $this->get_post_broadcast_data( $bcd->parent_blog_id, $bcd->post->ID );
 
@@ -1969,32 +2181,35 @@ And I wrote the following message:
 			{
 				$parent_broadcast_data = $this->get_post_broadcast_data( $bcd->parent_blog_id, $bcd->post->post_parent );
 			}
+			$this->debug( 'Post type is hierarchical: %s', $this->yes_no( $bcd->post_type_is_hierarchical ) );
 		}
+		else
+			$this->debug( 'Linking is disabled.' );
 
 		if ( $bcd->taxonomies )
 		{
-			$bcd->parent_blog_taxonomies = get_object_taxonomies( [ 'object_type' => $bcd->post->post_type ], 'array' );
-			$bcd->parent_post_taxonomies = [];
-			foreach( $bcd->parent_blog_taxonomies as $parent_blog_taxonomy => $taxonomy )
-			{
-				// Parent blog taxonomy terms are used for creating missing target term ancestors
-				$bcd->parent_blog_taxonomies[ $parent_blog_taxonomy ] = [
-					'taxonomy' => $taxonomy,
-					'terms'    => $this->get_current_blog_taxonomy_terms( $parent_blog_taxonomy ),
-				];
-				$bcd->parent_post_taxonomies[ $parent_blog_taxonomy ] = get_the_terms( $bcd->post->ID, $parent_blog_taxonomy );
-			}
+			$this->debug( 'Will broadcast taxonomies.' );
+			$this->collect_post_type_taxonomies( $bcd );
 		}
+		else
+			$this->debug( 'Will not broadcast taxonomies.' );
 
 		$bcd->attachment_data = [];
 		$attached_files = get_children( 'post_parent='.$bcd->post->ID.'&post_type=attachment' );
 		$has_attached_files = count( $attached_files) > 0;
 		if ( $has_attached_files )
+		{
+			$this->debug( 'Has %s attachments.', $has_attached_files );
 			foreach( $attached_files as $attached_file )
+			{
 				$bcd->attachment_data[ $attached_file->ID ] = attachment_data::from_attachment_id( $attached_file, $bcd->upload_dir );
+				$this->debug( 'Attachment %s found.', $attached_file->ID );
+			}
+		}
 
 		if ( $bcd->custom_fields )
 		{
+			$this->debug( 'Will broadcast custom fields.' );
 			$bcd->post_custom_fields = get_post_custom( $bcd->post->ID );
 
 			$bcd->has_thumbnail = isset( $bcd->post_custom_fields[ '_thumbnail_id' ] );
@@ -2004,6 +2219,7 @@ And I wrote the following message:
 
 			if ( $bcd->has_thumbnail )
 			{
+				$this->debug( 'Post has a thumbnail (featured image).' );
 				$bcd->thumbnail_id = $bcd->post_custom_fields[ '_thumbnail_id' ][0];
 				$bcd->thumbnail = get_post( $bcd->thumbnail_id );
 				unset( $bcd->post_custom_fields[ '_thumbnail_id' ] ); // There is a new thumbnail id for each blog.
@@ -2011,24 +2227,23 @@ And I wrote the following message:
 				// Now that we know what the attachment id the thumbnail has, we must remove it from the attached files to avoid duplicates.
 				unset( $bcd->attachment_data[ $bcd->thumbnail_id ] );
 			}
+			else
+				$this->debug( 'Post does not have a thumbnail (featured image).' );
 
 			// Remove all the _internal custom fields.
 			$bcd->post_custom_fields = $this->keep_valid_custom_fields( $bcd->post_custom_fields );
 		}
+		else
+			$this->debug( 'Will not broadcast custom fields.' );
 
 		// Handle any galleries.
 		$bcd->galleries = new collection;
-		$rx = get_shortcode_regex();
-		$matches = '';
-		preg_match_all( '/' . $rx . '/', $bcd->post->post_content, $matches );
+		$matches = $this->find_shortcodes( $bcd->post->post_content, 'gallery' );
+		$this->debug( 'Found %s gallery shortcodes.', count( $matches[ 2 ] ) );
 
 		// [2] contains only the shortcode command / key. No options.
 		foreach( $matches[ 2 ] as $index => $key )
 		{
-			// Look for only the gallery shortcode.
-			if ( $key !== 'gallery' )
-				continue;
-
 			// We've found a gallery!
 			$bcd->has_galleries = true;
 			$gallery = new \stdClass;
@@ -2039,9 +2254,11 @@ And I wrote the following message:
 
 			// Extract the IDs
 			$gallery->ids_string = preg_replace( '/.*ids=\"([0-9,]*)".*/', '\1', $gallery->old_shortcode );
+			$this->debug( 'Gallery %s has IDs: %s', $gallery->old_shortcode, $gallery->ids_string );
 			$gallery->ids_array = explode( ',', $gallery->ids_string );
 			foreach( $gallery->ids_array as $id )
 			{
+				$this->debug( 'Gallery has attachment %s.', $id );
 				$ad = attachment_data::from_attachment_id( $id, $bcd->upload_dir );
 				$bcd->attachment_data[ $id ] = $ad;
 			}
@@ -2053,21 +2270,28 @@ And I wrote the following message:
 		// To prevent recursion
 		array_push( $this->broadcasting, $bcd );
 
-		// POST is no longer needed. Remove it so that other plugins don't use it.
-		unset( $_POST );
+		// POST is no longer needed. Empty it so that other plugins don't use it.
+		$action = new actions\maybe_clear_post;
+		$action->post = $_POST;
+		$action->apply();
+		$_POST = $action->post;
 
 		$action = new actions\broadcasting_started;
 		$action->broadcasting_data = $bcd;
 		$action->apply();
 
+		$this->debug( 'Beginning child broadcast loop.' );
+
 		foreach( $bcd->blogs as $child_blog )
 		{
 			$child_blog->switch_to();
 			$bcd->current_child_blog_id = $child_blog->get_id();
+			$this->debug( 'Switched to blog %s', $bcd->current_child_blog_id );
 
 			// Create new post data from the original stuff.
 			$bcd->new_post = (array) $bcd->post;
-			foreach( array( 'comment_count', 'guid', 'ID', 'menu_order', 'post_parent' ) as $key )
+
+			foreach( [ 'comment_count', 'guid', 'ID', 'post_parent' ] as $key )
 				unset( $bcd->new_post[ $key ] );
 
 			$action = new actions\broadcasting_after_switch_to_blog;
@@ -2088,6 +2312,7 @@ And I wrote the following message:
 				if ( $broadcast_data->has_linked_child_on_this_blog() )
 				{
 					$child_post_id = $broadcast_data->get_linked_child_on_this_blog();
+					$this->debug( 'There is already a child post on this blog: %s', $child_post_id );
 
 					// Does this child post still exist?
 					$child_post = get_post( $child_post_id );
@@ -2102,23 +2327,36 @@ And I wrote the following message:
 
 			if ( $need_to_insert_post )
 			{
+				$this->debug( 'Creating a new post.' );
 				$temp_post_data = $bcd->new_post;
 				unset( $temp_post_data[ 'ID' ] );
+
 				$result = wp_insert_post( $temp_post_data, true );
+
 				// Did we manage to insert the post properly?
 				if ( intval( $result ) < 1 )
+				{
+					$this->debug( 'Unable to insert the child post.' );
 					continue;
+				}
 				// Yes we did.
 				$bcd->new_post[ 'ID' ] = $result;
 
+				$this->debug( 'New child created: %s', $result );
+
 				if ( $bcd->link )
+				{
+					$this->debug( 'Adding link to child.' );
 					$broadcast_data->add_linked_child( $bcd->current_child_blog_id, $bcd->new_post[ 'ID' ] );
+				}
 			}
 
 			if ( $bcd->taxonomies )
 			{
+				$this->debug( 'Taxonomies: Starting.' );
 				foreach( $bcd->parent_post_taxonomies as $parent_post_taxonomy => $parent_post_terms )
 				{
+					$this->debug( 'Taxonomies: %s', $parent_post_taxonomy );
 					// If we're updating a linked post, remove all the taxonomies and start from the top.
 					if ( $bcd->link )
 						if ( $broadcast_data->has_linked_child_on_this_blog() )
@@ -2126,7 +2364,10 @@ And I wrote the following message:
 
 					// Skip this iteration if there are no terms
 					if ( ! is_array( $parent_post_terms ) )
+					{
+						$this->debug( 'Taxonomies: Skipping %s because the parent post does not have any terms set for this taxonomy.', $parent_post_taxonomy );
 						continue;
+					}
 
 					// Get a list of terms that the target blog has.
 					$target_blog_terms = $this->get_current_blog_taxonomy_terms( $parent_post_taxonomy );
@@ -2141,6 +2382,7 @@ And I wrote the following message:
 						{
 							if ( $target_blog_term[ 'slug' ] == $parent_slug )
 							{
+								$this->debug( 'Taxonomies: Found existing taxonomy %s.', $parent_slug );
 								$found = true;
 								$taxonomies_to_add_to[] = intval( $target_blog_term[ 'term_id' ] );
 								break;
@@ -2163,36 +2405,24 @@ And I wrote the following message:
 								);
 							}
 
-							$new_taxonomy = wp_insert_term(
-								$parent_post_term->name,
-								$parent_post_taxonomy,
-								array(
-									'slug' => $parent_post_term->slug,
-									'description' => $parent_post_term->description,
-									'parent' => $target_parent_id,
-								)
-							);
-
-							// Sometimes the search didn't find the term because it's SIMILAR and not exact.
-							// WP will complain and give us the term tax id.
-							if ( is_wp_error( $new_taxonomy ) )
-							{
-								$wp_error = $new_taxonomy;
-								if ( isset( $wp_error->error_data[ 'term_exists' ] ) )
-									$term_taxonomy_id = $wp_error->error_data[ 'term_exists' ];
-							}
-							else
-							{
-								$term_taxonomy_id = $new_taxonomy[ 'term_taxonomy_id' ];
-							}
+							$new_term = clone( $parent_post_term );
+							$new_term->parent = $target_parent_id;
+							$action = new actions\wp_insert_term;
+							$action->taxonomy = $parent_post_taxonomy;
+							$action->term = $new_term;
+							$action->apply();
+							$new_taxonomy = $action->new_term;
+							$term_taxonomy_id = $new_taxonomy[ 'term_taxonomy_id' ];
+							$this->debug( 'Taxonomies: Created taxonomy %s (%s).', $parent_post_term->name, $term_taxonomy_id );
 
 							$taxonomies_to_add_to []= intval( $term_taxonomy_id );
 						}
 					}
 
+					$this->debug( 'Taxonomies: Syncing terms.' );
 					$this->sync_terms( $bcd, $parent_post_taxonomy );
 
-					if ( count( $taxonomies_to_add_to) > 0 )
+					if ( count( $taxonomies_to_add_to ) > 0 )
 					{
 						// This relates to the bug mentioned in the method $this->set_term_parent()
 						delete_option( $parent_post_taxonomy . '_children' );
@@ -2200,12 +2430,16 @@ And I wrote the following message:
 						wp_set_object_terms( $bcd->new_post[ 'ID' ], $taxonomies_to_add_to, $parent_post_taxonomy );
 					}
 				}
+				$this->debug( 'Taxonomies: Finished.' );
 			}
 
 			// Remove the current attachments.
-			$attachments_to_remove = get_children( 'post_parent='.$bcd->new_post[ 'ID' ].'&post_type=attachment' );
+			$attachments_to_remove = get_children( 'post_parent='.$bcd->new_post[ 'ID' ] . '&post_type=attachment' );
 			foreach ( $attachments_to_remove as $attachment_to_remove )
+			{
+				$this->debug( 'Deleting existing attachment: %s', $attachment_to_remove->ID );
 				wp_delete_attachment( $attachment_to_remove->ID );
+			}
 
 			// Copy the attachments
 			$bcd->copied_attachments = [];
@@ -2221,7 +2455,9 @@ And I wrote the following message:
 					$a = new \stdClass();
 					$a->old = $attachment;
 					$a->new = get_post( $o->attachment_id );
+					$a->new->id = $a->new->ID;		// Lowercase is expected.
 					$bcd->copied_attachments[] = $a;
+					$this->debug( 'Copied attachment %s to %s', $a->old->id, $a->new->id );
 				}
 			}
 
@@ -2240,6 +2476,7 @@ And I wrote the following message:
 					$modified_post->post_content = str_replace( $a->old->guid, $a->new->guid, $modified_post->post_content );
 					// And replace the IDs present in any image captions.
 					$modified_post->post_content = str_replace( 'id="attachment_' . $a->old->id . '"', 'id="attachment_' . $a->new->id . '"', $modified_post->post_content );
+					$this->debug( 'Modifying attachment link from %s to %s', $a->old->id, $a->new->id );
 				}
 			}
 
@@ -2258,7 +2495,7 @@ And I wrote the following message:
 					{
 						if ( $ca->old->id != $id )
 							continue;
-						$new_ids[] = $ca->new->ID;
+						$new_ids[] = $ca->new->id;
 					}
 				}
 				$new_ids_string = implode( ',', $new_ids );
@@ -2267,9 +2504,17 @@ And I wrote the following message:
 				$modified_post->post_content = str_replace( $gallery->old_shortcode, $new_shortcode, $modified_post->post_content );
 			}
 
+			$bcd->modified_post = $modified_post;
+			$action = new actions\broadcasting_modify_post;
+			$action->broadcasting_data = $bcd;
+			$action->apply();
+
 			// Maybe updating the post is not necessary.
 			if ( $unmodified_post->post_content != $modified_post->post_content )
+			{
+				$this->debug( 'Modifying with new post: %s', $this->code_export( $modified_post->post_content ) );
 				wp_update_post( $modified_post );	// Or maybe it is.
+			}
 
 			if ( $bcd->custom_fields )
 			{
@@ -2320,7 +2565,10 @@ And I wrote the following message:
 
 					$this->maybe_copy_attachment( $o );
 					if ( $o->attachment_id !== false )
+					{
+						$this->debug( 'Handling post thumbnail: %s %s', $bcd->new_post[ 'ID' ], '_thumbnail_id', $o->attachment_id );
 						update_post_meta( $bcd->new_post[ 'ID' ], '_thumbnail_id', $o->attachment_id );
+					}
 				}
 			}
 
@@ -2333,6 +2581,7 @@ And I wrote the following message:
 
 			if ( $bcd->link )
 			{
+				$this->debug( 'Saving broadcast data of child.' );
 				$new_post_broadcast_data = $this->get_post_broadcast_data( $bcd->current_child_blog_id, $bcd->new_post[ 'ID' ] );
 				$new_post_broadcast_data->set_linked_parent( $bcd->parent_blog_id, $bcd->post->ID );
 				$this->set_post_broadcast_data( $bcd->current_child_blog_id, $bcd->new_post[ 'ID' ], $new_post_broadcast_data );
@@ -2353,7 +2602,10 @@ And I wrote the following message:
 
 		// Save the post broadcast data.
 		if ( $bcd->link )
+		{
+			$this->debug( 'Saving broadcast data.' );
 			$this->set_post_broadcast_data( $bcd->parent_blog_id, $bcd->post->ID, $broadcast_data );
+		}
 
 		$action = new actions\broadcasting_finished;
 		$action->broadcasting_data = $bcd;
@@ -2361,6 +2613,19 @@ And I wrote the following message:
 
 		// Finished broadcasting.
 		array_pop( $this->broadcasting );
+
+		if ( $this->debugging() )
+		{
+			if ( ! $this->is_broadcasting() )
+			{
+				$this->debug( 'Finished broadcasting. Now stopping Wordpress.' );
+				exit;
+			}
+			else
+			{
+				$this->debug( 'Still broadcasting.' );
+			}
+		}
 
 		$this->load_language();
 
@@ -2377,6 +2642,38 @@ And I wrote the following message:
 	}
 
 	/**
+		@brief		Dump a variable with code tags.
+		@since		2014-04-06 21:49:24
+	**/
+	public function code_export( $variable )
+	{
+		return sprintf( '<pre><code>%s</code></pre>', var_export( $variable, true ) );
+	}
+
+	/**
+		@brief		Collects the post type's taxonomies into the broadcasting data object.
+		@details	Requires only that $bcd->post->post_type be filled in.
+		@since		2014-04-08 13:40:44
+	**/
+	public function collect_post_type_taxonomies( $bcd )
+	{
+		$bcd->parent_blog_taxonomies = get_object_taxonomies( [ 'object_type' => $bcd->post->post_type ], 'array' );
+		$bcd->parent_post_taxonomies = [];
+		foreach( $bcd->parent_blog_taxonomies as $parent_blog_taxonomy => $taxonomy )
+		{
+			// Parent blog taxonomy terms are used for creating missing target term ancestors
+			$bcd->parent_blog_taxonomies[ $parent_blog_taxonomy ] = [
+				'taxonomy' => $taxonomy,
+				'terms'    => $this->get_current_blog_taxonomy_terms( $parent_blog_taxonomy ),
+			];
+			if ( isset( $bcd->post->ID ) )
+				$bcd->parent_post_taxonomies[ $parent_blog_taxonomy ] = get_the_terms( $bcd->post->ID, $parent_blog_taxonomy );
+			else
+				$bcd->parent_post_taxonomies[ $parent_blog_taxonomy ] = get_terms( [ $parent_blog_taxonomy ] );
+		}
+	}
+
+	/**
 		@brief		Creates a new attachment.
 		@details
 
@@ -2388,7 +2685,7 @@ And I wrote the following message:
 		@since		20130530
 		@version	20131003
 	*/
-	private function copy_attachment( $o )
+	public function copy_attachment( $o )
 	{
 		if ( ! file_exists( $o->attachment_data->filename_path ) )
 			return false;
@@ -2441,6 +2738,18 @@ And I wrote the following message:
 	}
 
 	/**
+		@brief		Creates the ID column in the broadcast data table.
+		@since		2014-04-20 20:19:45
+	**/
+	public function create_broadcast_data_id_column()
+	{
+		$query = sprintf( "ALTER TABLE `%s` ADD `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'ID of row' FIRST;",
+			$this->broadcast_data_table()
+		);
+		$this->query( $query );
+	}
+
+	/**
 		@brief		Create a meta box for this post.
 		@since		20131015
 	**/
@@ -2453,6 +2762,47 @@ And I wrote the following message:
 		$meta_box_data->post = $post;
 		$meta_box_data->post_id = $post->ID;
 		return $meta_box_data;
+	}
+
+	/**
+		@brief		Output a string if in debug mode.
+		@since		20140220
+	*/
+	public function debug( $string )
+	{
+		if ( ! $this->debugging() )
+			return;
+
+		$text = call_user_func_array( 'sprintf', func_get_args() );
+		if ( $text == '' )
+			$text = $string;
+		$text = sprintf( '%s %s<br/>', $this->now(), $text );
+		echo $text;
+	}
+
+	/**
+		@brief		Is Broadcast in debug mode?
+		@since		20140220
+	*/
+	public function debugging()
+	{
+		$debugging = $this->get_site_option( 'debug', false );
+		if ( ! $debugging )
+			return false;
+
+		// Debugging is enabled. Now check if we should show it to this user.
+		$ips = $this->get_site_option( 'debug_ips', '' );
+		// Empty = no limits.
+		if ( $ips == '' )
+			return true;
+
+		$lines = explode( "\n", $ips );
+		foreach( $lines as $line )
+			if ( strpos( $_SERVER[ 'REMOTE_ADDR' ], $line ) !== false )
+				return true;
+
+		// No match = not debugging for this user.
+		return false;
 	}
 
 	/**
@@ -2474,6 +2824,35 @@ And I wrote the following message:
 			return;
 		wp_enqueue_script( 'threewp_broadcast', $this->paths[ 'url' ] . '/js/user.min.js', '', $this->plugin_version );
 		$this->_js_enqueued = true;
+	}
+
+	/**
+		@brief		Find shortcodes in a string.
+		@details	Runs a preg_match_all on a string looking for specific shortcodes.
+					Overrides Wordpress' get_shortcode_regex without own shortcode(s).
+		@since		2014-02-26 22:05:09
+	**/
+	public function find_shortcodes( $string, $shortcodes )
+	{
+		// Make the shortcodes an array
+		if ( ! is_array( $shortcodes ) )
+			$shortcodes = [ $shortcodes ];
+
+		// We use Wordpress' own function to find shortcodes.
+
+		global $shortcode_tags;
+		// Save the old global
+		$old_shortcode_tags = $shortcode_tags;
+		// Replace the shortcode tags with just our own.
+		$shortcode_tags = array_flip( $shortcodes );
+		$rx = get_shortcode_regex();
+		$shortcode_tags = $old_shortcode_tags;
+
+		// Run the preg_match_all
+		$matches = '';
+		preg_match_all( '/' . $rx . '/', $string, $matches );
+
+		return $matches;
 	}
 
 	public function get_current_blog_taxonomy_terms( $taxonomy )
@@ -2573,17 +2952,13 @@ And I wrote the following message:
 		if ( is_null( $term_id ) || 0 == $term_id )
 		{
 			// The target parent does not exist, we need to create it
-			$new_term = wp_insert_term(
-				$source_parent[ 'name' ],
-				$source_post_taxonomy,
-				array(
-					'slug'        => $source_parent[ 'slug' ],
-					'description' => $source_parent[ 'description' ],
-					'parent'      => $target_grandparent_id,
-				)
-			);
-
-			$term_id = $new_term[ 'term_id' ];
+			$new_term = (object)$source_parent;
+			$new_term->parent = $target_grandparent_id;
+			$action = new actions\wp_insert_term;
+			$action->taxonomy = $source_post_taxonomy;
+			$action->term = $new_term;
+			$action->apply();
+			$term_id = $action->new_term[ 'term_id' ];
 		}
 		elseif ( is_array( $term_id ) )
 		{
@@ -2707,8 +3082,8 @@ And I wrote the following message:
 		{
 			$attachment_posts = get_posts( [
 				'cache_results' => false,
+				'name' => $attachment_data->post->post_name,
 				'numberposts' => PHP_INT_MAX,
-				'post_name' => $attachment_data->post->post_name,			// Isn't used, though it should be. Maybe a patch is in order...
 				'post_type' => 'attachment',
 
 			] );
@@ -2721,52 +3096,30 @@ And I wrote the following message:
 		{
 			if ( $attachment_post->post_name !== $attachment_data->post->post_name )
 				continue;
-			// The ID is the important part.
-			$options->attachment_id = $attachment_post->ID;
-			return $options;
+			// We've found an existing attachment. What to do with it...
+			switch( $this->get_site_option( 'existing_attachments', 'use' ) )
+			{
+				case 'overwrite':
+					// Delete the existing attachment
+					wp_delete_attachment( $attachment_post->ID, true );		// true = Don't go to trash
+					break;
+				case 'randomize':
+					$filename = $options->attachment_data->filename_base;
+					$filename = preg_replace( '/(.*)\./', '\1_' . rand( 1000000, 9999999 ) .'.', $filename );
+					$options->attachment_data->filename_base = $filename;
+					break;
+				case 'use':
+				default:
+					// The ID is the important part.
+					$options->attachment_id = $attachment_post->ID;
+					return $options;
+
+			}
 		}
 
 		// Since it doesn't exist, copy it.
 		$this->copy_attachment( $options );
 		return $options;
-	}
-
-	/**
-		@brief		Display the message to fill in the obsolescence notice
-		@since		20131122
-	**/
-	public function obsolescence_notice()
-	{
-		$r = '';
-
-		// Check the obsolescence notice
-		$shown = $this->get_site_option( 'obsolescence_notice', false );
-		if ( ! $shown )
-		{
-			$form = $this->form2();
-
-			$form->markup( 'fill_in' )
-				->p( 'Please take a moment to take a look at the <a href="admin.php?page=threewp_broadcast_admin_menu&tab=obsolescence">obsolescence notice</a>.' );
-			$form->secondary_button( 'no_thanks' )
-				->value( 'No thank you. Hide this message.' );
-
-			if ( $form->is_posting() )
-			{
-				$this->update_site_option( 'obsolescence_notice', true );
-				$shown = false;
-			}
-
-			if ( ! $shown )
-			{
-				$message = sprintf( '%s%s%s',
-					$form->open_tag(),
-					$form->display_form_table(),
-					$form->close_tag()
-				);
-				$r = $this->message( $message );
-			}
-		}
-		return $r;
 	}
 
 	private function save_last_used_settings( $user_id, $settings )
@@ -2799,24 +3152,29 @@ And I wrote the following message:
 
 	/**
 		@brief		Syncs the terms of a taxonomy from the parent blog in the BCD to the current blog.
-		@details
-
-		Checks the parentage of the terms.
-
+		@details	If $bcd->add_new_taxonomies is set, new taxonomies will be created, else they are ignored.
 		@param		broadcasting_data		$bcd			The broadcasting data.
 		@param		string					$taxonomy		The taxonomy to sync.
 		@since		20131004
 	**/
-	private function sync_terms( $bcd, $taxonomy )
+	public function sync_terms( $bcd, $taxonomy )
 	{
 		$source_terms = $bcd->parent_blog_taxonomies[ $taxonomy ][ 'terms' ];
 		$target_terms = $this->get_current_blog_taxonomy_terms( $taxonomy );
+		$this->debug( 'Source terms for taxonomy %s: %s', $taxonomy, $this->code_export( $source_terms ) );
+		$this->debug( 'Target terms for taxonomy %s: %s', $taxonomy, $this->code_export( $target_terms ) );
+
+		$refresh_cache = false;
 
 		// Keep track of which terms we've found.
 		$found_targets = [];
 		$found_sources = [];
 
+		// Also keep track of which sources we haven't found on the target blog.
+		$unfound_sources = $source_terms;
+
 		// First step: find out which of the target terms exist on the source blog
+		$this->debug( 'Find out which of the source terms exist on the target blog.' );
 		foreach( $target_terms as $target_term_id => $target_term )
 			foreach( $source_terms as $source_term_id => $source_term )
 			{
@@ -2824,36 +3182,90 @@ And I wrote the following message:
 					continue;
 				if ( $source_term[ 'slug' ] == $target_term[ 'slug' ] )
 				{
+					$this->debug( 'Find source term %s. Source ID: %s. Target ID: %s.', $source_term[ 'slug' ], $source_term_id, $target_term_id );
 					$found_targets[ $target_term_id ] = $source_term_id;
 					$found_sources[ $source_term_id ] = $target_term_id;
+					unset( $unfound_sources[ $source_term_id ] );
 				}
 			}
+
+		// These sources were not found. Add them.
+		if ( isset( $bcd->add_new_taxonomies ) && $bcd->add_new_taxonomies )
+		{
+			$this->debug( '%s taxonomies are missing on this blog.', count( $unfound_sources ) );
+			foreach( $unfound_sources as $unfound_source_id => $unfound_source )
+			{
+				$unfound_source = (object)$unfound_source;
+				unset( $unfound_source->parent );
+				$action = new actions\wp_insert_term;
+				$action->taxonomy = $taxonomy;
+				$action->term = $unfound_source;
+				$action->apply();
+
+				$new_taxonomy = $action->new_term;
+				$new_taxonomy_id = $new_taxonomy[ 'term_id' ];
+				$target_terms[ $new_taxonomy_id ] = (array)$new_taxonomy;
+				$found_sources[ $unfound_source_id ] = $new_taxonomy_id;
+				$found_targets[ $new_taxonomy_id ] = $unfound_source_id;
+
+				$refresh_cache = true;
+			}
+		}
 
 		// Now we know which of the terms on our target blog exist on the source blog.
 		// Next step: see if the parents are the same on the target as they are on the source.
 		// "Same" meaning pointing to the same slug.
+		$this->debug( 'About to update taxonomy terms.' );
 		foreach( $found_targets as $target_term_id => $source_term_id)
 		{
-			$parent_of_target_term = $target_terms[ $target_term_id ][ 'parent' ];
-			$parent_of_equivalent_source_term = $source_terms[ $source_term_id ][ 'parent' ];
+			$source_term = (object)$source_terms[ $source_term_id ];
+			$target_term = (object)$target_terms[ $target_term_id ];
 
-			if ( $parent_of_target_term != $parent_of_equivalent_source_term &&
-				(isset( $found_sources[ $parent_of_equivalent_source_term ] ) || $parent_of_equivalent_source_term == 0 )
-			)
+			$action = new actions\wp_update_term;
+			$action->taxonomy = $taxonomy;
+
+			// The old term is the target term, since it contains the old values.
+			$action->old_term = (object)$target_terms[ $target_term_id ];
+			// The new term is the source term, since it has the newer data.
+			$action->new_term = (object)$source_terms[ $source_term_id ];
+
+			// ... but the IDs have to be switched around, since the target term has the new ID.
+			$action->switch_data();
+
+			// Update the parent.
+			$parent_of_equivalent_source_term = $source_term->parent;
+			$parent_of_target_term = $target_term->parent;
+
+			$new_parent = 0;
+			// Does the source term even have a parent?
+			if ( $parent_of_equivalent_source_term > 0 )
 			{
-				if ( $parent_of_equivalent_source_term != 0)
-					$new_term_parent = $found_sources[ $parent_of_equivalent_source_term ];
-				else
-					$new_term_parent = 0;
-				wp_update_term( $target_term_id, $taxonomy, array(
-					'parent' => $new_term_parent,
-				) );
-
-				// wp_update_category alone won't work. The "cache" needs to be cleared.
-				// see: http://wordpress.org/support/topic/category_children-how-to-recalculate?replies=4
-				delete_option( 'category_children' );
+				// Did we find the parent term?
+				if ( isset( $found_sources[ $parent_of_equivalent_source_term ] ) )
+					$new_parent = $found_sources[ $parent_of_equivalent_source_term ];
 			}
+			else
+				$new_parent = 0;
+
+			$action->new_term->parent = $new_parent;
+
+			$action->apply();
+			$refresh_cache |= $action->updated;
 		}
+
+		// wp_update_category alone won't work. The "cache" needs to be cleared.
+		// see: http://wordpress.org/support/topic/category_children-how-to-recalculate?replies=4
+		if ( $refresh_cache )
+			delete_option( 'category_children' );
+	}
+
+	/**
+		@brief		Return yes / no, depending on value.
+		@since		20140220
+	**/
+	public function yes_no( $value )
+	{
+		return $value ? 'yes' : 'no';
 	}
 
 	// --------------------------------------------------------------------------------------------
@@ -2970,7 +3382,6 @@ And I wrote the following message:
 			);
 		$this->query( $query );
 	}
-
 }
 
 $threewp_broadcast = new ThreeWP_Broadcast();

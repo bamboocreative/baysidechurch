@@ -1,0 +1,85 @@
+{% extends "base.twig" %}
+
+{% block content %}
+	
+	{% if post.page_title_image == 'yes' %}
+		<section class="header-image-wrapper">
+			<div style="
+				background-color:{{post.page_title_background_color}}; 
+				background-image:url('{{post.page_title_background_image}}');
+				padding-top:{{post.custom_image_padding}}px;
+				padding-bottom:{{post.custom_image_padding}}px
+				" 
+				class="header-image
+			">
+				<img style="width:{{post.page_title_image_width}}px" class="img_svg" src="{{post.page_title_image_(svg)}}">
+				
+				<img style="width:{{post.page_title_image_width}}px" class="img_png" src="{{post.page_title_image_(svg)}}">
+			</div>
+		</section>
+	{% endif %}		
+	<section class="ministry-info">
+		<div class="container">
+			<article id="post-{{post.id}}" role="article" itemscope itemtype="http://schema.org/BlogPosting">
+				<section class="entry-content clearfix" itemprop="articleBody">
+					<div class="row">
+						<div class="col-md-8 col-sm-7">
+						<header class="article-header">
+							<table>
+								<tr>
+									<td><h1 class="page-title" itemprop="headline">{{post.title}}</h1></td>
+									<td><h4 class="page-title ages" itemprop="headline">ALL AGES</h4></td>
+								</tr>
+							</table>
+						</header>
+						{{post.content}}
+						</div>
+						<div class="col-md-4 col-sm-5">
+							{% if (post.facebook_url or post.twitter_username or post.instagram_username or post.contact_email) %}
+							<h4 class="in-touch">GET IN TOUCH</h4>
+							<div class="social">
+								{% if post.facebook_url %}
+								<a class="facebook soicon" href="http://www.{{post.facebook_url}}"><i class="fa fa-facebook"></i></a>
+								{% endif %}
+								{% if post.twitter_username %}
+								<a class="twitter soicon" href="http://www.twitter.com/{{post.twitter_username}}"><i class="fa fa-twitter"></i></a>
+								{% endif %}
+								{% if post.instagram_username %}
+								<a class="instagram soicon" href="http://www.twitter.com/{{post.instagram_username}}"><i class="fa fa-instagram"></i></a>
+								{% endif %}
+								{% if post.contact_email %}
+								<a href="mailto:{{post.contact_email}}"><h4>{{post.contact_email}}</h4></a>
+								{% endif %}
+							{% endif %}
+						</div>
+					</div>
+				</section>
+			</article>
+		</div>
+	</section>
+	{% if repo %}
+    <section class="ministry-repository">
+		<div class="container">
+			<h2>{{post.title}} Ministry Items</h2>
+			<table>
+				{% for item in repo %}
+				<tr>
+					<td>
+						{{item.name}}
+					</td>
+					<td>
+						<a target="_blank" href="{{item.file}}">download</a>
+					</td>
+				</tr>
+				 {% endfor %}
+			</table>
+		</div>
+	</section>
+	{% endif %}
+	<section class="events-outer">
+		<div class="container">
+		{% include 'events.twig' %}
+		</div>
+	</section>
+
+{% endblock %}

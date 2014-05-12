@@ -13,6 +13,16 @@ namespace plainview\sdk;
 
 	This list only shows which classes were modified. For a detailed list, see the class' changelog.
 
+	- 20140418		wordpress wp_die()
+	- 20140413		wordpress - new roles handling
+	- 20140412		wordpress/db trait - fixed insert bug.
+	- 20140406		wordpress
+	- 20140331		Fixed Drupal db_aware_object path.
+	- 20140218		form2
+	- 20140203		Wordpress form
+	- 20140114		current_url SSL workaround for Microsoft IIS. *sigh*
+	- 20140110		Fixed add() bug in tree.
+	- 20140106		collections\collection.
 	- 20131211		wordpress
 	- 20131210		wordpress
 	- 20131209		tree class added.
@@ -92,7 +102,7 @@ class base
 		@since		20130416
 		@var		$sdk_version
 	**/
-	protected $sdk_version = 20131211;
+	protected $sdk_version = 20140418;
 
 	/**
 		@brief		Constructor.
@@ -228,7 +238,15 @@ class base
 		if ( ! isset( $SERVER[ 'SERVER_PORT' ] ) )
 			return '';
 
-		$ssl = ( isset( $SERVER[ 'HTTPS' ] ) && ( $SERVER[ 'HTTPS' ] != '' ) );
+		$ssl = false;
+		if ( isset( $SERVER[ 'HTTPS' ] ) )
+		{
+			$ssl = (
+				( $SERVER[ 'HTTPS' ] != '' )
+				&&
+				( $SERVER[ 'HTTPS' ] != 'off' )
+			);
+		}
 
 		$port = $SERVER[ 'SERVER_PORT' ];
 		if ( $ssl && $port == 443 )
