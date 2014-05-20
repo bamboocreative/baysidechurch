@@ -121,6 +121,7 @@ img{
 		position: relative;
 		a{
 			color: $brand-darker;
+			margin-right: 20px;
 			&:hover{
 				text-decoration: none;
 				color: darken($brand-darker, 10%);
@@ -130,9 +131,8 @@ img{
 		
 		.tag-wrapper{
 			display: inline-block;
-			position: absolute;
+			position: relative;
 			top: -7px;
-			padding-left: 20px;
 			.event-tag{
 				font-size: .4em;
 				text-transform: uppercase;
@@ -149,7 +149,8 @@ img{
 				
 			}
 		}
-	}	
+	}
+	
 	table.event-details{
 		margin: 10px 0px;
 		
@@ -228,7 +229,37 @@ img{
 
 .badge-wrapper{
 	background: $brand-primary;
-	padding: 20px 0px;
+	
+	.single-badge-wrapper{
+		display: block;
+		color: #fff;
+		margin: 1.5em 0px;
+		
+		@include transition(opacity .3s);
+		
+		.badge-date{
+			font-weight: 500;
+			display: inline-block;
+			margin-bottom: .3em;
+		}
+		
+		img.event-badge{
+			width: 100%;
+		}
+		
+		.badge-title{
+			font-weight: 800;
+			text-transform: uppercase;
+			font-size: 1.1em;
+		}
+		
+		&:hover{
+			color: #fff;
+			opacity: .8;
+		}
+		
+	}
+
 }
 
 // FOOTER
@@ -358,3 +389,20 @@ footer.footer{
 		}
 	}
 }
+
+
+
+/*
+.img_svg{
+	display: none;
+}
+
+.svg{
+	.img_svg{
+		display: inherit;
+	}
+	
+	.img_png{
+		display: none;	
+	}
+} */

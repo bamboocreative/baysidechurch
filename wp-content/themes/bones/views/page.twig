@@ -12,9 +12,13 @@
 				" 
 				class="header-image
 			">
-				<img style="width:{{post.page_title_image_width}}px" class="img_svg" src="{{post.page_title_image_(svg)}}">
+				{% if post.page_title_image_svg %}
+				<img style="max-width:{{post.page_title_image_width}}px" class="img_svg" src="{{TimberImage(post.get_field('page_title_image_svg')).src}}">
+				{% endif %}
 				
-				<img style="width:{{post.page_title_image_width}}px" class="img_png" src="{{post.page_title_image_(svg)}}">
+				{% if post.page_title_image_png %}
+				<img style="max-width:{{post.page_title_image_width}}px;{% if post.page_title_image_svg is empty %}display: inline-block;{% endif %}" class="img_png" src="{{TimberImage(post.get_field('page_title_image_png')).src}}">
+				{% endif %}
 			</div>
 		</section>
 	{% endif %}		
@@ -57,28 +61,10 @@
 			</article>
 		</div>
 	</section>
-	{% if repo %}
-    <section class="ministry-repository">
-		<div class="container">
-			<h2>{{post.title}} Ministry Items</h2>
-			<table>
-				{% for item in repo %}
-				<tr>
-					<td>
-						{{item.name}}
-					</td>
-					<td>
-						<a target="_blank" href="{{item.file}}">download</a>
-					</td>
-				</tr>
-				 {% endfor %}
-			</table>
-		</div>
-	</section>
-	{% endif %}
+	{% include 'components/repository.twig' %}
 	<section class="events-outer">
 		<div class="container">
-		{% include 'events.twig' %}
+		{% include 'components/events.twig' %}
 		</div>
 	</section>
 

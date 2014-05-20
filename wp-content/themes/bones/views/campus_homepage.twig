@@ -1,0 +1,74 @@
+{% extends "base.twig" %}
+
+{% block content %}
+
+<div class="campus-header-wrapper" {% if post.campus_photo %}style="background-image:url('{{TimberImage(post.get_field('campus_photo')).src}}')" {% endif %}>
+	<table>
+		<tr>
+			<td class="campus-logo">
+				{% if post.campus_logo %}
+					<img src="{{TimberImage(post.get_field('campus_logo')).src}}">
+				{% else %}
+					{{post.campus_name}}
+				{% endif %}
+			</td>
+		</tr>
+	</table>		
+</div>
+{% include 'components/badges.twig' %}
+<div class="container">
+	<div class="row">
+		<div class="col-md-6">
+				{{post.about_campus}}			
+			<!-- Inception loop for services -->			
+				{% for day in campus.days %}
+					<ul>
+						<h3>{{day.day}}</h3>
+						{% for service in day.services %}
+							<li>{{service.time}} {{service.features}}</li>
+						{% endfor %}
+					</ul>
+				{% endfor %}
+		</div>
+		<div class="col-md-6">								
+			<div id="campus-map" style="width: 100%; height: 300px"></div>
+			<h2>
+			{% if post.location_name %}
+			{{post.location_name}}
+			{% else %}
+			{{post.campus_name}}
+			{% endif %}
+			</h2>
+			{{campus.address}}
+			<br>
+		</div>
+	</div>	
+</div>
+
+<div class="events-outer">
+	<div class="container">
+		<!-- Events Loop goes in here -->
+		{% include 'components/events.twig' %}
+	</div>
+</div>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCqf_tUZR5C_oTNOML0nyR2WLLdIhvykiw&sensor=true"></script>
+<script type="text/javascript">
+	var myLatlng = new google.maps.LatLng({{campus.coordinates}});
+	
+	var mapOptions = {
+	  center: myLatlng,
+	  zoom: 12,
+	  scrollwheel: false,
+	  mapTypeId: google.maps.MapTypeId.ROADMAP
+	};
+	
+	var map = new google.maps.Map(document.getElementById("campus-map"), mapOptions);
+	
+	var marker = new google.maps.Marker({
+	    position: myLatlng,
+	    map: map,
+	    title:"Hello World!"
+	});	
+</script>
+
+{% endblock %}

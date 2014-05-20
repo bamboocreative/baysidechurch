@@ -1,0 +1,19 @@
+{% if repo %}
+<section class="ministry-repository">
+	<div class="container">
+		<h2>{{post.title}} Ministry Items</h2>
+		<table>
+			{% for item in repo %}
+			<tr>
+				<td>
+					{{item.name}}
+				</td>
+				<td>
+					<a target="_blank" href="{{item.file}}">download</a>
+				</td>
+			</tr>
+			 {% endfor %}
+		</table>
+	</div>
+</section>
+{% endif %}

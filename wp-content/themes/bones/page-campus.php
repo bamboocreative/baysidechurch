@@ -1,129 +1,95 @@
 <?php
 /*
-Template Name: Campus Home
+Template Name: Campus Homepage
 */
-?>
 
+// Sets up an array of badges to be passed to TWIG. Defined in bones.php. Queury has nothing to do with the page loop, so we'll leave it out.
+$badges = getEventBadges();
+$currentDate = time();
 
-<?php get_header(); ?>
-
-						<?php $headerBG = get_field('campus_photo'); ?>
-						<div class="campus-header-wrapper" <?php if(get_field('campus_photo')){echo 'style="background-image:url(' . $headerBG . ');"';} ?>>
-							<table>
-								<tr>
-									<td class="campus-logo">
-										<?php if(get_field('campus_logo')){ ?>
-											<img src="<?php echo get_field('campus_logo'); ?>">
-										<?php }else{ ?>
-											<?php echo get_bloginfo( 'name' );?>
-										<?php }  ?>
-									</td>
-								</tr>
-							</table>		
-						</div>
+// Standard wordpress loop
+if (have_posts()) : while (have_posts()) : the_post();
+	// Sets up location info
+	$location = get_field('campus_location');
+	$coordinates = $location['coordinates'];
+	$address = $location['address'];
+	
+	// Inception loop for services
+	if(get_field('service_times')):
+		// Loops through days that have services
+		while(has_sub_field('service_times')):
+			//Loops through service times for each day
+			while(has_sub_field('services')):
+				// Builds array for each service
+				$services[] = array(
+					'time' => get_sub_field('service_time'),
+					'features' => get_sub_field('service_features')
+				);
+			endwhile;
+			// Builds array for each day containing the array for each service
+			$days[] = array(
+				'day' => get_sub_field('service_day'),
+				'services' => $services
+			);
+			// Clears the services array after they have been added to their day.
+			$services = array();
+		endwhile;
+	endif;
+	
+	// Getting static pages and then adding them at specific indexes to the badges array before passing them to twig.
+	if(get_field('static_badge')):
+				
+		while(has_sub_field('static_badge')):
+			
+			// Get the activation fields
+			$deactiveDate = get_sub_field('badge_deactive_date');
+			$activeDate = get_sub_field('badge_activation_date');
+			
+			// Check to see if the badge is active
+			if($deactiveDate){
+				if($currentDate < $deactiveDate){
+					$active = true;
+				} else{
+					$active = false;
+				}
+			} else{
+				$active = true;
+			}
 						
-						<div id="main" role="main">
+			// If it's active, continue
+			if($active == true && $currentDate >= $activeDate){
+				// Takes the column number for readablility and subtracts for the array index.
+				$arrayIndex = get_sub_field('position') - 1;
+				
+				// Here's our new static badge
+				$staticBadge = array(
+					'image' => get_sub_field('badge_image'), 
+					'permalink' => get_sub_field('badge_link'), 
+					'title' => get_sub_field('badge_title'),
+					'date' => get_sub_field('display_date')
+				);
+				
+				// Splice up the array and insert our static badge at the specified index
+				array_splice( $badges, $arrayIndex, 0, array($staticBadge) );
+				
+			}
+			
+		endwhile;
+	endif;
+	
+endwhile; endif;
 
-							<?php if (have_posts()) : while (have_posts()) : the_post(); ?>
+// Sets up an array to pass to the TWIG template
+$campus = array(
+	'coordinates' => $coordinates,
+	'address' => $address,
+	'days' => $days
+);
 
-							<article id="post-<?php the_ID(); ?>" <?php post_class( 'clearfix' ); ?> role="article" itemscope itemtype="http://schema.org/BlogPosting">
-								
-							<div class="container">
-								<div class="row">
-									<div class="col-md-6  ">
-										<?php if(get_field('about_campus')){
-											the_field('about_campus');
-										} ?>
-										<?php 
-										$location = get_field('campus_location');
-										if($location){$coordinates = $location['coordinates'];}
-										if($coordinates){echo $location['address'];}
-										?>	
-										
-										<!-- Inception loop for services -->
-										<?php if(get_field('service_times')): ?>
-											<ul>
-											<?php while(has_sub_field('service_times')): ?>
-												<li>
-												<?php the_sub_field('service_day') ?>
-													
-												<?php while(has_sub_field('services')): ?>
-													<?php the_sub_field('service_time'); ?>
-													<?php the_sub_field('service_features'); ?>
-												<?php endwhile; ?>
-												</li>
-											<?php endwhile; ?>
-											</ul>
-										<?php endif; ?>	
-									</div>
-									<div class="col-md-6">								
-										<div id="campus-map" style="width: 100%; height: 300px"></div>
-									</div>
-								</div>	
-							</div>
-							
-							<?php // Defined in bones.php ?>
-							<div class="badge-wrapper">
-								<div class="container">
-									<div class="row">
-									<?php $badges = getEventBadges(4); ?>
-									
-									<?php if($badges){ ?>
-									<?php foreach($badges as $badge){
-										echo '<div class="col-md-3 col-sm-6">';
-										echo '<a href="' . $badge['permalink'] . '"><img class="event-badge" src="' . $badge['image'] .  '"></a>';
-										echo '</div>';
-									}?>
-									<?php } ?>
-									</div>
-								</div>
-							</div>
-							
-							<div class="events-outer container">
-							<?php 
-							// Defined in bones.php
-							displayEvents(array('homepage', 'featured'),'', 9999, 'and');
-							displayEvents(array('homepage'),'featured', 10, 'in');
-							?>
-							</div>
-														
-							</article> <?php // end article ?>
-
-							<?php endwhile; else : ?>
-
-									<article id="post-not-found" class="hentry clearfix">
-										<header class="article-header">
-											<h1><?php _e( 'Oops, Post Not Found!', 'bonestheme' ); ?></h1>
-										</header>
-										<section class="entry-content">
-											<p><?php _e( 'Uh Oh. Something is missing. Try double checking things.', 'bonestheme' ); ?></p>
-										</section>
-										<footer class="article-footer">
-												<p><?php _e( 'This is the error message in the page.php template.', 'bonestheme' ); ?></p>
-										</footer>
-									</article>
-
-							<?php endif; ?>
-
-						</div> <?php // end #main ?>
-
-						<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCqf_tUZR5C_oTNOML0nyR2WLLdIhvykiw&sensor=true"></script>
-						<script>
-							var myLatlng = new google.maps.LatLng(<?php echo $coordinates; ?>);
-							
-							var mapOptions = {
-							  center: myLatlng,
-							  zoom: 12,
-							  scrollwheel: false,
-							  mapTypeId: google.maps.MapTypeId.ROADMAP
-							};
-							
-							var map = new google.maps.Map(document.getElementById("campus-map"), mapOptions);
-							
-							var marker = new google.maps.Marker({
-							    position: myLatlng,
-							    map: map,
-							    title:"Hello World!"
-							});	
-						</script>
-<?php get_footer(); ?>
+/* Renders TWIG */
+$context = Timber::get_context();
+$post = new TimberPost();
+$context['post'] = $post;
+$context['campus'] = $campus;
+$context['badges'] = $badges;
+Timber::render('campus_homepage.TWIG', $context);

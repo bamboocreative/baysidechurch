@@ -41,7 +41,7 @@ include 'ACF/customPosts/post-videos.php';
 
 // Includes custom fields for all sites using the theme.
 // include 'ACF/customFields/ministry-repo.php';
-include 'ACF/customFields/campus.php';
+// include 'ACF/customFields/campus.php';
 // include 'ACF/customFields/event.php';
 include 'ACF/customFields/video.php';
 

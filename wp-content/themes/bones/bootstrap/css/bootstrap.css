@@ -255,7 +255,7 @@ html {
   -webkit-tap-highlight-color: transparent; }
 
 body {
-  font-family: "Open Sans", "myriad-pro", Helvetica, Arial, sans-serif;
+  font-family: "myriad-pro", Helvetica, Arial, sans-serif;
   font-size: 19px;
   line-height: 1.42857;
   color: #555555;
@@ -380,7 +380,7 @@ cite {
 
 h1, h2, h3, h4, h5, h6,
 .h1, .h2, .h3, .h4, .h5, .h6 {
-  font-family: "Open Sans", "myriad-pro", Helvetica, Arial, sans-serif;
+  font-family: "myriad-pro", Helvetica, Arial, sans-serif;
   font-weight: 200;
   line-height: 1.1; }
   h1 small, h2 small, h3 small, h4 small, h5 small, h6 small,
@@ -5799,15 +5799,15 @@ img {
     font-size: 2.2em;
     position: relative; }
     .event-wrapper h1 a {
-      color: #2d5d93; }
+      color: #2d5d93;
+      margin-right: 20px; }
       .event-wrapper h1 a:hover {
         text-decoration: none;
         color: #21446c; }
     .event-wrapper h1 .tag-wrapper {
       display: inline-block;
-      position: absolute;
-      top: -7px;
-      padding-left: 20px; }
+      position: relative;
+      top: -7px; }
       .event-wrapper h1 .tag-wrapper .event-tag {
         font-size: .4em;
         text-transform: uppercase;
@@ -5860,8 +5860,26 @@ img {
         max-width: 800px; }
 
 .badge-wrapper {
-  background: #00aeef;
-  padding: 20px 0px; }
+  background: #00aeef; }
+  .badge-wrapper .single-badge-wrapper {
+    display: block;
+    color: #fff;
+    margin: 1.5em 0px;
+    -webkit-transition: opacity 0.3s;
+    transition: opacity 0.3s; }
+    .badge-wrapper .single-badge-wrapper .badge-date {
+      font-weight: 500;
+      display: inline-block;
+      margin-bottom: .3em; }
+    .badge-wrapper .single-badge-wrapper img.event-badge {
+      width: 100%; }
+    .badge-wrapper .single-badge-wrapper .badge-title {
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 1.1em; }
+    .badge-wrapper .single-badge-wrapper:hover {
+      color: #fff;
+      opacity: .8; }
 
 footer.footer {
   background: #2d5d93;
@@ -5959,3 +5977,18 @@ footer.footer {
             text-decoration: underline; }
             .ministry-repository table tr td:last-child a:hover {
               color: #c05414; }
+
+/*
+.img_svg{
+	display: none;
+}
+
+.svg{
+	.img_svg{
+		display: inherit;
+	}
+	
+	.img_png{
+		display: none;	
+	}
+} */
