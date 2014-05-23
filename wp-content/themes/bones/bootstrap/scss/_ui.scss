@@ -35,86 +35,194 @@ img{
 
 .events-outer{
 	background: lighten($gray-lighter, 0%);
-	padding: 2em 0 0;
 	h2{
 		margin-top: 0px;
 		padding-bottom: 10px;
 	}
 }
 
-.event-wrapper{
-	
-	padding-bottom: 2em;
-	
-	a{
-		&:hover{
-			.calendar{
-				
-				
-				.month{
-					background: darken($brand-danger, 5%);
-				}
-			}
+.single-event-title{
+	color: $brand-darker;
+}
+
+.section{
+	padding-top: 4em;
+	padding-bottom: 4em;
+}
+
+.accent{
+	color: $brand-detail;
+}
+
+.map-wrapper{
+
+	position: relative;
+
+	.map-info{
+		position: absolute;
+		z-index: 9999;
+		bottom: 0;
+		background: rgba(45,93,147,.9);
+		width: 100%;
+		padding: 1em;
+		color: #fff;
+		
+		h2{
+			margin: 0;
 		}
 		
-		.calendar{
-			
-			@media (max-width: $screen-desktop){
-				float: none;
-			}
-			
-			height: 140px;
-			width: 140px;
-			float: left;	
-			margin-top: 8px;
-			margin-bottom: 1px;
-			margin-right: $grid-gutter-width;
-			text-align: center;
-						
-			&.image{
-				border: none;
-				.day{
-					border: none;
-				}
-			}
-			
-			table{
-				width: 100%;
-				height: 100%;
-				tr{
-					td{
-						text-align: center;
-					}
-				}
-				.month{
-					font-weight: 900;
-					text-transform: uppercase;
-					height: 30%;
-					background: $brand-danger;
-					color: #fff;
-					font-size: 1.1em;
-					border: 1px solid $brand-danger;
-					@include transition(background $transitionTime);
-					
-				}
-				.day{
-					font-weight: 200;
-					font-size: 4em;
-					line-height: .5em;
-					vertical-align: middle;
-					color: $gray-light;
-					border: 1px solid darken($gray-lighter, 10%);
-					padding-bottom: 10px;
-					.date-text{
-						margin-bottom: 10px;
-					}
-					background: white;
-				}
-			}
-			
+	}
+
+}
+
+.weekend-services{
+	
+	h2{
+		margin: 0;
+		margin-bottom: 1em;
+	}
+	
+	ul{
+		padding: 0;
+		li{
+			list-style-type: none;
+		}
+		
+	}
+	
+	.service-day{
+		color: $brand-darkish;
+	}
+	
+	
+}
+
+.single-archive{
+	
+	padding-bottom: 3em;
+	
+}
+
+.event-header{
+	width: 100%;
+	margin-bottom: 3em;
+	img{
+		width: 100%;
+	}
+	
+	@media (max-width: $screen-phone){
+		margin-bottom: 1em;
+		margin-top: -2em;
+		overflow: hidden;
+		text-align: center;
+		img{
+			width: 800px;
+			max-width: 800px;
+			position: relative;
+			left: -50%;
 		}
 	}
 	
+}
+
+table.event-details{
+	margin: 15px 0 !important;
+}
+
+.event-links{
+	
+	margin-top: 2em;
+	width: 100%;
+	
+	a{
+		display: inline-block;
+		margin-right: 15px;
+		text-decoration: underline;
+		
+		@media (max-width: $screen-phone){
+			display: block;
+			margin-top: 10px;
+		}
+		
+	}
+	
+}
+
+.event-registration-form{
+	margin-top: 2em;
+}
+
+a{
+	&:hover{
+		.calendar{
+			
+			
+			.month{
+				background: darken($brand-danger, 5%);
+			}
+		}
+	}
+	
+	.calendar{
+		
+		@media (max-width: $screen-desktop){
+			float: none;
+		}
+		
+		height: 140px;
+		width: 140px;
+		float: left;	
+		margin-top: 8px;
+		margin-bottom: 1px;
+		margin-right: $grid-gutter-width;
+		text-align: center;
+					
+		&.image{
+			border: none;
+			.day{
+				border: none;
+			}
+		}
+		
+		table{
+			width: 100%;
+			height: 100%;
+			tr{
+				td{
+					text-align: center;
+				}
+			}
+			.month{
+				font-weight: 900;
+				text-transform: uppercase;
+				height: 30%;
+				background: $brand-danger;
+				color: #fff;
+				font-size: 1.1em;
+				border: 1px solid $brand-danger;
+				@include transition(background $transitionTime);
+				
+			}
+			.day{
+				font-weight: 200;
+				font-size: 4em;
+				line-height: .5em;
+				vertical-align: middle;
+				color: $gray-light;
+				border: 1px solid darken($gray-lighter, 10%);
+				padding-bottom: 10px;
+				.date-text{
+					margin-bottom: 10px;
+				}
+				background: white;
+			}
+		}
+		
+	}
+}
+
+.event-wrapper{
+
 	h1{
 		margin: 0px;
 		font-size: 2.2em;
@@ -136,67 +244,65 @@ img{
 			.event-tag{
 				font-size: .4em;
 				text-transform: uppercase;
-				border: 2px solid $gray-light;
-				padding: 4px 7px;
 				background: #fff;
+				color: $brand-primary;
 				display: inline-block;
 				font-weight: 600;
 				line-height: 16px;
 				&.featured{
 					border: 2px solid $brand-primary;
-					color: $brand-primary;
+					
+					padding: 4px 7px;
 				}
-				
 			}
+			
 		}
 	}
-	
-	table.event-details{
-		margin: 10px 0px;
-		
-		// width: 100%;	
-		tr{
-			td{
-				.fa-calendar-o, .fa-clock-o, .fa-map-marker, .fa-usd{
-					padding-right: 10px;
-				}
+}
 
-				
-				@media (max-width: $screen-desktop){
-					
-					display: block !important;
-					
-					.fa-calendar-o, .fa-clock-o, .fa-map-marker, .fa-usd{
-						width: 30px;
-						padding-right: 0px;
-					}
-									
-					.fa-clock-o{
-						padding-left: 1px;
-					}
-					
-					.fa-map-marker{
-						padding-left: 4px;
-					}
-					
-					.fa-usd{
-						padding-left: 4px;
-					}
-					
-				}
-				
-				padding-right: 50px;
-				.fa{
-					color: $brand-detail;
-					font-size: 1.1em;
-				}
-			}
-		}	
-		
-	}
+table.event-details{
+	margin: 10px 0px;
+	color: $gray-light;
 	
-	.event-content{
-	}
+	// width: 100%;	
+	tr{
+		td{
+			.fa-calendar-o, .fa-clock-o, .fa-map-marker, .fa-usd{
+				padding-right: 10px;
+			}
+
+			
+			@media (max-width: $screen-desktop){
+				
+				display: block !important;
+				
+				.fa-calendar-o, .fa-clock-o, .fa-map-marker, .fa-usd{
+					width: 30px;
+					padding-right: 0px;
+				}
+								
+				.fa-clock-o{
+					padding-left: 1px;
+				}
+				
+				.fa-map-marker{
+					padding-left: 4px;
+				}
+				
+				.fa-usd{
+					padding-left: 4px;
+				}
+				
+			}
+			
+			padding-right: 50px;
+			.fa{
+				color: $brand-detail;
+				font-size: 1.1em;
+			}
+		}
+	}	
+	
 }
 
 // CAMPUS HOMEPAGE
@@ -214,7 +320,7 @@ img{
 	table{
 		width: 100%;
 		td.campus-logo{
-			height: 300px;
+			height: 500px;
 			text-align: center;
 			vertical-align: middle;
 			img{
@@ -357,8 +463,7 @@ footer.footer{
 }
 
 .ministry-repository{
-	padding-top: 60px;
-	margin-bottom: 60px;
+
 	h2{
 		margin-top: 0px;
 	}
@@ -390,7 +495,136 @@ footer.footer{
 	}
 }
 
+.media{
+	margin: 0;
+}
 
+.fourohfour{
+	
+	h1{
+		font-size: 17em;
+		margin-top: 0px;
+		overflow: hidden;
+		
+		position: relative;
+		z-index: 2;
+		color: $gray-lighter;
+		
+		@media (max-width: $screen-phone){
+			font-size: 10em;
+		}
+		
+	}
+	
+	h3{
+		color: $brand-darker;
+		font-size: 2em;
+		margin-bottom: .5em;
+	}
+	
+	h2{
+		font-size: 5em;
+		margin: .7em 0 1.5em;
+		color: $brand-primary;
+		
+		.eyes{
+			top:-6px;
+			position: relative;
+		}
+	}
+	
+	p{
+		font-size: 1.1em;
+	}
+	
+	.eyes{
+		
+	}
+}
+
+.screen-reader-text{
+	position: absolute;
+	left: -9999px;
+}
+
+//Search Page
+.results-header{
+	color: $brand-darker;
+	margin: 2.5em 0 2em;
+	
+	.query{
+		color: $gray;
+		font-weight: 900;
+	}
+}
+
+.results-title{
+	margin-bottom: 1em;
+	h2{
+		display: inline-block;
+		margin: 0px;
+		margin-right: 10px;
+	}
+	
+	.results-number{
+		font-size: .9em;
+		color: $gray-light;
+	}
+}
+
+.single-archive-wrapper{
+	margin-bottom: 2em;
+	min-height: 150px;
+	
+	h2{
+		margin-bottom: .7em;
+		a{
+			color: $brand-darker;
+		}
+		
+	}
+}
+
+button, a.button, input[type="submit"]{
+	display: inline-block;
+	color: #fff;
+	background: $brand-primary;
+	font-weight: 500;
+	text-transform: uppercase;
+	font-size: 1.1em;
+	padding: .4em 1.2em;
+	text-decoration: none;
+	border: 0;
+	
+	@include transition(color .3s, background .3s, opacity .3s);
+	
+	&:hover{
+		background: $brand-darkish;
+	}
+	
+}
+
+.gform_confirmation_wrapper{
+	background: lighten($brand-success, 30%);
+	border: 1px solid $brand-success;
+	padding: 1em;
+}
+
+.videoWrapper {
+	position: relative;
+	padding-bottom: 56.25%; /* 16:9 */
+	padding-top: 25px;
+	height: 0;
+	
+	iframe {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+	}
+	
+}
 
 /*
 .img_svg{

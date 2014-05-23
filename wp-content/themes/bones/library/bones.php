@@ -65,143 +65,159 @@ function getEvents($category, $notIn, $limit, $handle){
 			// Setting up post data
 			$my_query->the_post();
 			
-			// Set up the date.
-			$date = get_field('date');
-						
-			// Return shortented content for event archive.
-			$trimmed_content = wp_trim_words( get_field('content'), 30, '... <a href="'. get_permalink() .'">Read More</a>' );
+			$events[] = get_single_event();
 			
-			// Return the featured image of the event
-			$feat_image = wp_get_attachment_url( get_post_thumbnail_id( get_the_id() ) );
-			
-			// Sets up the start date variables
-			$startDate  = date('M j, Y', get_field('date'));
-			$startMonth = date('M', get_field('date'));
-			$startDay   = date('j', get_field('date'));
-			$startYear  = date('Y', get_field('date'));
-			$startTime  = date('g:ia', get_field('date'));
-			$startHour  = date('g', get_field('date'));
-			$startMin   = date('i', get_field('date'));
-			$startMerid = date('a', get_field('date'));
-			
-			// Sets up the end date variables
-			$endDate    = date('M j, Y', get_field('end_date'));
-			$endMonth   = date('M', get_field('end_date'));
-			$endDay     = date('j', get_field('end_date'));
-			$endYear    = date('Y', get_field('end_date'));
-			$endTime    = date('g:ia', get_field('end_date'));
-			$endHour    = date('g', get_field('end_date'));
-			$endMin     = date('i', get_field('end_date'));
-			$endMerid   = date('a', get_field('end_date'));
-			
-			// If there's an end date set, make it pretty. Currently, no end date breaks the function.
-			if(get_field('end_date')){
-				// If the event occurs on the same date, just display one date.
-				$year = '';
-				$month = '';
-				
-				if($startDate == $endDate){
-					$date = $startDate;
-				} else{
-					// If the event occurs in the same month, just display one month.
-					if($startMonth != $endMonth){
-						$month = $startMonth;
-					}
-					// If the event occurs in the same year, just display one year.
-					if($startYear != $endYear){
-						$year = ', ' . $startYear;
-						$month = $startMonth;
-					}
-					
-					// Return the pretty date.
-					$date = $startMonth . ' ' . $startDay . $year . ' - ' .  $month . ' ' . $endDay . ', ' . $endYear;
-				}
-			} else{
-				// If there's no end date, just use the start date. Currently, no end date breaks the function.
-				$date = $startDate;
-			}
-			
-			// If the event has a separate end time
-			if($startTime !== $endTime){
-				
-				// If the end time isn't midnight, show it and make it pretty.
-				if($endTime !== '12:00am'){
-					
-					// If the event occurs with the same meridiem, just display one meridiem.
-					if($startMerid == $endMerid){
-						$startTime = $startHour . ':' . $startMin;
-					}
-					
-					// Return the pretty time.
-					$time = $startTime . ' - ' . $endTime;
-				
-				} else{
-					// If the end time is midnight, just show the start time.
-					$time = $startTime;
-				}
-				
-			} else{
-				// If the event occurs at the same time, just show the start time.
-				$time = $startTime;
-			}
-			
-			
-			// If the time is set to 12:00am, treat it as all day.
-			if($time == '12:00am'){
-				$time = 'All Day';
-			}
-			
-			// Return the custom location name.
-			$location = get_field('custom_location_name');
-			// If none is set, assume it's at Bayside Church
-			if(!$location){
-				$location = 'Bayside Church';
-			}
-			
-			// Return the custonm cost.
-			$cost = get_field('cost');
-			// If none is set, assime it's free.
-			if(!$cost){
-				$cost ='Free';
-			}
-			
-			// Builds an event array with all its data.
-			$events[] = array(
-				'id' => get_the_id(),
-				'title' => get_the_title(),
-				'content' => get_field('content'),
-				'trimmed_content' => $trimmed_content,
-				'feat_image' => $feat_image,
-				'featured' => $featured,
-				'permalink' => get_permalink(),
-				'all_day' => get_field('all_day'),
-				'badge_activation_date' => get_field('badge_activation_date'),
-				'badge_deactive_date' => get_field('badge_deactive_date'),
-				'contact' => get_field('contact'),
-				'contact?_' => get_field('contact?_'),
-				'contact_email_address' => get_field('contact_email_address'),
-				'date' => $date,
-				'month' => date('M', get_field('date')),
-				'day' => date('j', get_field('date')),
-				'end_date' => get_field('end_date'),
-				'end_time' => $endTime,
-				'time' => $time,
-				'event_badge' => get_field('event_badge'),
-				'location' => $location,
-				'map' => get_field('location'),
-				'multi-date' => get_field('multi-date'),
-				'registration' => get_field('registration'),
-				'registration_link' => get_field('registration_link'),
-				'start_time' => get_field('start_time'), 
-				'custom_location_name' => get_field('custom_location_name'), 
-				'cost' => $cost
-			);
 		}
+	
 		// Returns an array of events.
 		return $events;
 		// Restores original Post Data
 		wp_reset_postdata();
 	}
+}
+
+function get_single_event(){
+	
+	if(has_category('featured')){
+		$featured = true;
+	} else{
+		$featured = false;
+	}
+	
+	$date = get_field('date');
+				
+	// Return shortented content for event archive.
+	$trimmed_content = wp_trim_words( get_field('content'), 30, '... <a href="'. get_permalink() .'">Read More</a>' );
+	
+	// Return the featured image of the event
+	$feat_image = wp_get_attachment_url( get_post_thumbnail_id( get_the_id() ) );
+	
+	// Sets up the start date variables
+	$startDate  = date('M j, Y', get_field('date'));
+	$startMonth = date('M', get_field('date'));
+	$startDay   = date('j', get_field('date'));
+	$startYear  = date('Y', get_field('date'));
+	$startTime  = date('g:ia', get_field('date'));
+	$startHour  = date('g', get_field('date'));
+	$startMin   = date('i', get_field('date'));
+	$startMerid = date('a', get_field('date'));
+	
+	// Sets up the end date variables
+	$endDate    = date('M j, Y', get_field('end_date'));
+	$endMonth   = date('M', get_field('end_date'));
+	$endDay     = date('j', get_field('end_date'));
+	$endYear    = date('Y', get_field('end_date'));
+	$endTime    = date('g:ia', get_field('end_date'));
+	$endHour    = date('g', get_field('end_date'));
+	$endMin     = date('i', get_field('end_date'));
+	$endMerid   = date('a', get_field('end_date'));
+	
+	// If there's an end date set, make it pretty. Currently, no end date breaks the function.
+	if(get_field('end_date')){
+		// If the event occurs on the same date, just display one date.
+		$year = '';
+		$month = '';
+		
+		if($startDate == $endDate){
+			$date = $startDate;
+		} else{
+			// If the event occurs in the same month, just display one month.
+			if($startMonth != $endMonth){
+				$month = $startMonth;
+			}
+			// If the event occurs in the same year, just display one year.
+			if($startYear != $endYear){
+				$year = ', ' . $startYear;
+				$month = $startMonth;
+			}
+			
+			// Return the pretty date.
+			$date = $startMonth . ' ' . $startDay . $year . ' - ' .  $month . ' ' . $endDay . ', ' . $endYear;
+		}
+	} else{
+		// If there's no end date, just use the start date. Currently, no end date breaks the function.
+		$date = $startDate;
+	}
+	
+	// If the event has a separate end time
+	if($startTime !== $endTime){
+		
+		// If the end time isn't midnight, show it and make it pretty.
+		if($endTime !== '12:00am'){
+			
+			// If the event occurs with the same meridiem, just display one meridiem.
+			if($startMerid == $endMerid){
+				$startTime = $startHour . ':' . $startMin;
+			}
+			
+			// Return the pretty time.
+			$time = $startTime . ' - ' . $endTime;
+		
+		} else{
+			// If the end time is midnight, just show the start time.
+			$time = $startTime;
+		}
+		
+	} else{
+		// If the event occurs at the same time, just show the start time.
+		$time = $startTime;
+	}
+	
+	
+	// If the time is set to 12:00am, treat it as all day.
+	if($time == '12:00am'){
+		$time = 'All Day';
+	}
+	
+	// Return the custom location name.
+	$location = get_field('custom_location_name');
+	// If none is set, assume it's at Bayside Church
+	if(!$location){
+		$location = 'Bayside Church';
+	}
+	
+	// Return the custonm cost.
+	$cost = get_field('cost');
+	// If none is set, assime it's free.
+	if(!$cost){
+		$cost ='Free';
+	}
+	
+	// Builds an event array with all its data.
+	$event = array(
+		'id' => get_the_id(),
+		'title' => get_the_title(),
+		'content' => get_field('content'),
+		'trimmed_content' => $trimmed_content,
+		'thumb' => get_field('thumbnail'),
+		'header' => get_field('header'),
+		'featured' => $featured,
+		'permalink' => get_permalink(),
+		'all_day' => get_field('all_day'),
+		'badge_activation_date' => get_field('badge_activation_date'),
+		'badge_deactive_date' => get_field('badge_deactive_date'),
+		'contact' => get_field('contact'),
+		'contact?_' => get_field('contact?_'),
+		'contact_email_address' => get_field('contact_email_address'),
+		'date' => $date,
+		'month' => date('M', get_field('date')),
+		'day' => date('j', get_field('date')),
+		'end_date' => get_field('end_date'),
+		'end_time' => $endTime,
+		'time' => $time,
+		'event_badge' => get_field('event_badge'),
+		'location' => $location,
+		'map' => get_field('location'),
+		'multi-date' => get_field('multi-date'),
+		'registration' => get_field('registration'),
+		'registration_link' => get_field('registration_link'),
+		'start_time' => get_field('start_time'), 
+		'custom_location_name' => get_field('custom_location_name'), 
+		'cost' => $cost,
+		'video' => get_field('video_embed')
+	);
+	
+	return $event;
 }
 
 // This function handles all badge related items (EVENT)
@@ -297,7 +313,31 @@ function theNewURL($blog_id){
 	}
 	// Styles the output
 	return $newURL;
+}
+
+add_filter('timber_context', 'add_to_context');
+function add_to_context($data){
+    
+    /*
+    $blog_list = wp_get_sites();
+	//Todo:: SORTBY BLOG NUMBER
+	foreach ($blog_list as $blog) {
+		$blogID = $blog['blog_id'];	
+		// echo '<a href="' . theNewURL($blogID) . '">' . theNewURL($blogID) . '</a> ';
+		$newURL[] = theNewURL($blogID);
 	}
+    
+    $data['campusSwitcher'] = $newURL;
+    */
+    
+    $data['aboutMenu'] = new TimberMenu('About');
+    $data['campusMenu'] = new TimberMenu('Campuses');
+    $data['ministryMenu'] = new TimberMenu('Ministries');
+    $data['mediaMenu'] = new TimberMenu('Media');
+    $data['devotionalsMenu'] = new TimberMenu('Devotionals');
+    
+    return $data;
+}
 	
 // we're firing all out initial functions at the start
 add_action( 'after_setup_theme', 'bones_ahoy', 16 );
@@ -434,7 +474,7 @@ function bones_scripts_and_styles() {
     }
 
     //adding scripts file in the footer
-    wp_register_script( 'bones-js', get_stylesheet_directory_uri() . '/bootstrap/js/scripts-ck.js', array( 'jquery' ), '', true );
+    wp_register_script( 'bones-js', get_stylesheet_directory_uri() . '/bootstrap/js/bootstrap.js', array( 'jquery' ), '', true );
 
     // enqueue styles and scripts
     wp_enqueue_script( 'bones-modernizr' );

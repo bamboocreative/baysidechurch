@@ -16,21 +16,18 @@
 								</div>
 								<div class="col-md-4">
 									<select>
-									<!--
-									This runs through all oft he blogs and returns custom links. Check out "theNewURL()" in bones.php
-									$blog_list = wp_get_sites();
-									//Todo:: SORTBY BLOG NUMBER
-									foreach ($blog_list as $blog) {
-										$blogID = $blog['blog_id'];	
-										// echo '<a href="' . theNewURL($blogID) . '">' . theNewURL($blogID) . '</a> ';
-										echo '<option>'. theNewURL($blogID) .'</option>';
-									} -->
+									
+									<!--This runs through all oft he blogs and returns custom links. Check out "theNewURL()" in bones.php -->
+									{% for url in campusSwitcher %}
+									<option>{{url}}</option>
+									{% endfor %}
 									</select>
 								</div>
-								<div class="col-md-3">
-									<form class="search">
-										<input class="form-control" type="text">
-										<button class=""><i class="fa fa-search"></i></button>
+								<div class="col-md-3">					
+									<form role="search" method="get" class="search" action="{{site.url}}/">
+										<span class="screen-reader-text">Search for:</span>
+										<input value="{{'the_search_query'|function}}" placeholder="search..." class="form-control" type="text" name="s" title="Search for:">
+										<button type="submit" class=""><i class="fa fa-search"></i></button>
 									</form>
 								</div>
 							</div>
@@ -40,24 +37,28 @@
 				        <div class="container mainnav">
 					        <div class="nav top-nav clearfix">
 						        <ul>
-								   <li><a id="about" href="javascript:void(0)">About</a></li><!--
-								   --><li><a id="events" href="javascript:void(0)">Events</a></li><!--
-								   --><li><a id="campuses" href="javascript:void(0)">Campuses</a></li><!--
-								   --><li><a id="ministries" href="javascript:void(0)">Ministries</a></li><!--
-								   --><li><a id="media" href="javascript:void(0)">Media</a></li><!--
-								   --><li><a id="give" href="javascript:void(0)">Give</a></li>
+								   <li><a id="about" class="sub-dropdown" href="javascript:void(0)">About</a></li><!--
+								   --><li><a id="events" href="{{site.url}}/events">Events</a></li><!--
+								   --><li><a id="campuses" class="sub-dropdown" href="javascript:void(0)">Campuses</a></li><!--
+								   --><li><a id="ministries" class="sub-dropdown" href="javascript:void(0)">Ministries</a></li><!--
+								   --><li><a id="give" href="{{site.url}}/give">Give</a></li><!--
+								   --><li><a id="media" class="sub-dropdown" href="javascript:void(0)">Media</a></li><!--
+								   --><li><a id="devotionals" class="sub-dropdown" href="javascript:void(0)">Devotionals</a></li>
 						        </ul>
 					        </div>
 				        </div>
 				    </nav>	
 				</header>
 			</div>
-        {% endblock %}			
-		<section id="content" role="main" class="content-wrapper">
-			{% block content %}
-			{% endblock %}
-		</section>
+			{% endblock %}	
+			<div class="page-wrapper">
+				{% include 'components/subnav.twig' %}
+				<section id="content" role="main" class="content-wrapper">
+					{% block content %}
+					{% endblock %}
+				</section>
         {% block footer %}
+			</div>
         	<footer class="footer" role="contentinfo">
 				<div class="container">
 					<div id="inner-footer" class="wrap clearfix">

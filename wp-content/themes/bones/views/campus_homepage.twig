@@ -16,36 +16,45 @@
 	</table>		
 </div>
 {% include 'components/badges.twig' %}
-<div class="container">
+<div class="container section">
 	<div class="row">
-		<div class="col-md-6">
-				{{post.about_campus}}			
+		<div class="col-md-6 weekend-services">
+				<h2>Weekend Services</h2>
+				<p>{{post.about_campus}}</p>	
 			<!-- Inception loop for services -->			
+				<div class="row">
 				{% for day in campus.days %}
+					<div class="col-md-6">
 					<ul>
-						<h3>{{day.day}}</h3>
+						<h3 class="service-day">{{day.day}}</h3>
 						{% for service in day.services %}
-							<li>{{service.time}} {{service.features}}</li>
+							<li>{{service.time}}<span class="accent"> - {{service.features}}</span></li>
 						{% endfor %}
 					</ul>
+					</div>
 				{% endfor %}
+				</div>
 		</div>
 		<div class="col-md-6">								
-			<div id="campus-map" style="width: 100%; height: 300px"></div>
-			<h2>
-			{% if post.location_name %}
-			{{post.location_name}}
-			{% else %}
-			{{post.campus_name}}
-			{% endif %}
-			</h2>
-			{{campus.address}}
-			<br>
+			<div class="map-wrapper">
+				<div id="campus-map" style="width: 100%; height: 500px">
+				</div>
+				<div class="map-info">
+					<h2>
+					{% if post.location_name %}
+					{{post.location_name}}
+					{% else %}
+					{{post.campus_name}}
+					{% endif %}
+					</h2>
+					<h4>{{campus.address}}</h4>
+				</div>
+			</div>
 		</div>
 	</div>	
 </div>
 
-<div class="events-outer">
+<div class="events-outer section">
 	<div class="container">
 		<!-- Events Loop goes in here -->
 		{% include 'components/events.twig' %}

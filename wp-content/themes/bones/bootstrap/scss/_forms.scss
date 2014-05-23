@@ -33,9 +33,53 @@ legend {
 label {
   display: inline-block;
   margin-bottom: 5px;
-  font-weight: bold;
+  cursor: pointer;
 }
 
+.gform_heading{
+	border-bottom: 1px solid $gray-lighter;
+	padding-bottom: 2em;
+	margin-bottom: 2em;
+	
+	.gform_title{
+		color: $brand-darker;
+	}
+	
+}
+
+select{
+	border: 1px solid $gray-lighter;
+	font-weight: 100;
+	font-size: 1.1em;
+	padding: 0.5em !important;
+	background: #fff;
+	cursor: pointer;
+}
+
+.gform_body{
+	ul{
+		padding: 0;
+		li{
+			list-style-type: none;
+		}
+	}
+	
+	.gfield{
+		margin-bottom: 2em;
+	}
+}
+
+input[type="text"], input[type="email"], input[type="url"]{
+	border: 1px solid $gray-lighter;
+	font-weight: 100;
+	padding: 10px;
+	@include transition(.3s border);
+	
+	&:focus{
+		border: 1px solid $brand-primary
+	}
+	
+}
 
 // Normalize form controls
 

@@ -1,0 +1,63 @@
+{% extends "base.twig" %}
+
+{% block content %}
+
+	<div class="container section event-wrapper single-event">
+		<article class="post-type-{{post.post_type}}" id="post-{{post.ID}}">
+			<section class="article-content">
+				<div class="row">
+					<div class="col-md-12">
+						{% if event.header %}
+						<div class="event-header">
+							<img src="{{event.header}}">
+						</div>
+						{% endif %}
+						<h1>
+							<span class="single-event-title">{{event.title}}</span>
+							{% if event.featured %}
+							<div class="tag-wrapper">
+								<span class="event-tag">ALL AGES</span>
+							</div>
+							{% endif %}
+						</h1>
+						{% include 'components/eventdetails.twig' %}
+						<p class="event-content">
+							 {{event.content}}
+						</p>
+						<div class="event-links">
+							{% if event.registration == 'url' %}
+							<a href="{{event.registration_link}}" class="button">Register</a>
+							{% endif %}
+							{% for download in post.get_field('download_links') %}
+						    <a target="_blank" href="{{download.file}}">{{download.title}}</a>
+						    {% endfor %}
+						</div>
+						{% if event.registration == 'form' %}
+							<div class="event-registration-form">
+								{{form|shortcodes}}
+							</div>
+						{% endif %}
+					</div>
+				</div>
+				<div class="row section">
+					<div class="col-md-6">
+						{% if event.video %}
+						<div class="videoWrapper">
+							<iframe src="{{event.video}}" frameborder="0" allowfullscreen></iframe>
+						</div>
+						{% endif %}
+					</div>
+					<div class="col-md-6">
+						{% if event.video %}
+						<div class="videoWrapper">
+							<iframe src="{{event.video}}" frameborder="0" allowfullscreen></iframe>
+						</div>
+						{% endif %}
+					</div>
+				</div>
+			</section>
+			
+		</article>
+	</div> <!-- /content-wrapper -->
+
+{% endblock %}
