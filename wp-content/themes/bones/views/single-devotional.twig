@@ -1,0 +1,61 @@
+{% extends "base.twig" %}
+
+{% block content %}
+
+	<div class="container">
+		<article class="post-type-{{post.post_type}} single-video" id="post-{{post.ID}}">
+			<div class="row">
+				<div class="col-md-12">
+					<img class="single-series-header" src="{{weekend.series_header}}">
+					<h1 class="page-title">{{weekend.title}}</h1>
+					<h4 class="date"><a href="/weekends/{{weekend.series.slug}}"><span class="series-title">{{weekend.series.name}}</span></a> &nbsp;<span class="gray-lighter">\\</span>&nbsp; {{weekend.prettydate}}</h4>
+				</div>
+			</div>
+			<div class="row video-section">
+				<div class="col-md-6">
+					<div class="videoWrapper">
+						{{weekend.iframe}}
+					</div>
+				</div>
+				<div class="col-md-6">
+				<h3 class="author">{{weekend.author.display_name}}</h3>
+				{% if weekend.author_twitter %}
+				<a target="_blank" href="http://twitter.com/{{weekend.author_twitter}}" class="author_twitter">@{{weekend.author_twitter}}</a>
+				{% endif %}
+				<p class="author_bio">{{weekend.author.user_description}}</p>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-12">
+					<div class="resources-section">
+						<div class="row">
+							<div class="col-md-6">
+								<h3>Resources</h3>
+								{% if weekend.mp3 %}
+								<a target="_blank" href="{{weekend.mp3}}">Download .mp3</a>
+								{% endif %}
+								{% if weekend.message_notes %}
+								<a target="_blank" href="{{weekend.message_notes}}">Message Notes</a>
+								{% endif %}
+								{% for download in weekend.downloads %}
+								<a target="_blank" href="{{download.download_link}}">{{download.download_name}}</a>
+								{% endfor %}
+							</div>
+							{% if weekend.worship %}
+							<div class="col-md-6 worship-resource">
+								<h3>Worship Setlist</h3>
+								<ul class="worship-set">
+									{% for song in weekend.worship %}
+									<li>{{song.song}}</li>
+									{% endfor %}
+								</ul>
+							</div>
+							{% endif %}
+						</div>
+					</div>
+				</div>
+			</div>
+		</article>
+	</div>
+
+{% endblock %}

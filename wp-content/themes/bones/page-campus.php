@@ -94,4 +94,4 @@ $context['events'] = $events;
 $context['post'] = $post;
 $context['campus'] = $campus;
 $context['badges'] = $badges;
-Timber::render('campus_homepage.TWIG', $context);
+Timber::render('campus_homepage.twig', $context);

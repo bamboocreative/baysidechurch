@@ -1,0 +1,25 @@
+{% extends "base.twig" %}
+
+{% block content %}
+	<div class="container series-archive">
+		<h2 class="page-title">{{archivename}}</h2>
+		<div class="row">
+		{% for series in messageseries %}
+	        <div class="col-md-3">
+	        <a class="series" href="/{{posttype}}/{{series.slug}}">
+		        {% if series.current_series %}
+				<span class="current-badge">Current Series</span>
+		        {% endif %}
+		        <img class="series-thumb" src="{{series.archive_image}}">
+		        <h4>{{series.name}}</h4>
+		        <span class="series-date">{{series.series_date}}</span>
+	        </a>
+	        </div>
+        {% if loop.index == 4 %}
+        </div>
+        <div class="row">
+        {% endif %}
+	    {% endfor %}
+		</div>
+	</div>				
+{% endblock %}

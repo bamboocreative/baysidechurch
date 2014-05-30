@@ -1,0 +1,73 @@
+{% extends "base.twig" %}
+
+{% block content %}
+	
+	{% if post.page_title_image == 'yes' %}
+		<section class="header-image-wrapper">
+			<div style="
+				background-color:{{post.page_title_background_color}}; 
+				background-image:url('{{post.page_title_background_image}}');
+				padding-top:{{post.custom_image_padding}}px;
+				padding-bottom:{{post.custom_image_padding}}px
+				" 
+				class="header-image
+			">
+				{% if post.page_title_image_svg %}
+				<img style="max-width:{{post.page_title_image_width}}px" class="img_svg" src="{{TimberImage(post.get_field('page_title_image_svg')).src}}">
+				{% endif %}
+				
+				{% if post.page_title_image_png %}
+				<img style="max-width:{{post.page_title_image_width}}px;{% if post.page_title_image_svg is empty %}display: inline-block;{% endif %}" class="img_png" src="{{TimberImage(post.get_field('page_title_image_png')).src}}">
+				{% endif %}
+			</div>
+		</section>
+	{% endif %}		
+	<section class="ministry-info">
+		<div class="container">
+			<article id="post-{{post.id}}" role="article" itemscope itemtype="http://schema.org/BlogPosting">
+				<section class="entry-content clearfix" itemprop="articleBody">
+					<div class="row">
+						<div class="col-md-8 col-sm-7">
+						<header class="article-header">
+							<table>
+								<tr>
+									<td><h1 class="page-title" itemprop="headline">{{post.title}}</h1></td>
+									<td><h4 class="page-title ages" itemprop="headline">ALL AGES</h4></td>
+								</tr>
+							</table>
+						</header>
+						{{post.post_content}}
+						</div>
+						<div class="col-md-4 col-sm-5">
+							{% if (post.facebook_url or post.twitter_username or post.instagram_username or post.contact_email) %}
+							<h4 class="in-touch">GET IN TOUCH</h4>
+							<div class="social">
+								{% if post.facebook_url %}
+								<a class="facebook soicon" href="http://www.{{post.facebook_url}}"><i class="fa fa-facebook"></i></a>
+								{% endif %}
+								{% if post.twitter_username %}
+								<a class="twitter soicon" href="http://www.twitter.com/{{post.twitter_username}}"><i class="fa fa-twitter"></i></a>
+								{% endif %}
+								{% if post.instagram_username %}
+								<a class="instagram soicon" href="http://www.twitter.com/{{post.instagram_username}}"><i class="fa fa-instagram"></i></a>
+								{% endif %}
+								{% if post.contact_email %}
+								<a href="mailto:{{post.contact_email}}"><h4>{{post.contact_email}}</h4></a>
+								{% endif %}
+							{% endif %}
+						</div>
+					</div>
+				</section>
+			</article>
+		</div>
+	</section>
+	{% include 'components/repository.twig' %}
+	<section class="events-outer section">
+		
+		<div class="container">
+		<h1 class="events-archive-label">Upcoming Events</h1>
+		{% include 'components/events.twig' %}
+		</div>
+	</section>
+
+{% endblock %}

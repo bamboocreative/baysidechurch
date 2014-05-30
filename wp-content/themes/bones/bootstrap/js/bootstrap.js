@@ -15,6 +15,14 @@ jQuery(document).ready(function ($) {
 	$('.sub-dropdown').click(function(){
 		menuNav($(this));
 	});
+	
+	$('select#campus-switcher').change(function(){
+		
+		var campus = $( 'select#campus-switcher option:selected').data('url');
+		
+		window.location.href = campus;
+		
+	});
 		
 	$(document).mouseup(function (e)
 	{

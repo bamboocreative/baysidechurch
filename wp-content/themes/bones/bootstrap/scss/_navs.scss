@@ -78,45 +78,35 @@ nav.header{
 					 text-decoration: none;
 				   }
 				 }
-			
-				 // Disabled state sets text to gray and nukes hover/tab effects
-				 &.disabled > a {
-				   color: $nav-disabled-link-color;
-			
-				   &:hover,
-				   &:focus {
-					 color: $nav-disabled-link-hover-color;
-					 text-decoration: none;
-					 background-color: transparent;
-					 cursor: not-allowed;
-				   }
-				 }
+
 			   }
-			 }
-			 
-		
-		  // Open dropdowns
-		  .open > a {
-			&,
-			&:hover,
-			&:focus {
-			  background-color: $nav-link-hover-bg;
-			  border-color: $link-color;
 			}
-		  }
-		
-		  // Dividers (basically an hr) within the dropdown
-		  .nav-divider {
-			@include nav-divider();
-		  }
-		
-		  // Prevent IE8 from misplacing imgs
-		  // See https://github.com/h5bp/html5-boilerplate/issues/984#issuecomment-3985989
-		  > li > a > img {
-			max-width: none;
-		  }
 		}
 	}
+}
+
+.header-inner{
+	display: table;
+	width: 100%;
+	
+	.header-item{
+		display: table-cell;
+		vertical-align: middle;
+		
+		&.logo-wrapper{
+			width: 25%;
+		}
+		
+		&.search-wrapper{
+			width: 25%;
+		}
+		
+		&.campus-switcher-wrapper{
+			width: 50%;
+		}
+		
+	}
+	
 }
 
 .page-wrapper{

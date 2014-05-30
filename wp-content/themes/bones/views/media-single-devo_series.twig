@@ -1,0 +1,37 @@
+{% extends "base.twig" %}
+
+{% block content %}
+	{% for series in series %}
+	<div class="container series-devo-single">
+		<img class="single-series-header" src="{{series.header_image}}">
+		<h2 class="page-title">{{series.name}}</h2>
+		<span class="series-date">{{series.series_date}}</span>
+		<p class="series-desc">{{series.description}}</p>
+	</div>
+	<div class="container">
+		<div class="row">
+			{% for video in devos %}
+		        <div class="col-md-4">
+					<a href="{{video.permalink}}" class="video-archive-single">
+				        {% if video.today %}
+						<span class="current-badge">Today's Devo</span>
+				        {% endif %}
+				        <div class="thumb-wrapper">
+					        <i class="fa fa-youtube-play play-icon"></i>
+					        <img class="video-thumb" src="{{video.thumbnail}}">
+					    </div>
+				        <h4>{{video.title}}</h4>
+				        <span class="author-name">{{video.author.display_name}}</span>
+				        <span class="date">{{video.prettydate}}</span>
+				    </a>
+		        </div>
+	        {% if loop.index == 3 %}
+	        </div>
+	        <div class="row">
+	        {% endif %}
+		    {% endfor %}
+		</div>
+	</div>	
+	
+	{% endfor %}	
+{% endblock %}

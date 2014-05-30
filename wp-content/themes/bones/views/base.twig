@@ -10,26 +10,26 @@
 				<header class="header" role="banner">
 					<div class="top-level container">
 						<div class="header-inner">
-							<div class="row">
-								<div class="col-md-4">
-								<a href="{{site.url}}"><img class="logo" src="{{bloginfo('template_url')}}/library/images/bayside-white.svg"></a>
-								</div>
-								<div class="col-md-4">
-									<select>
-									
-									<!--This runs through all oft he blogs and returns custom links. Check out "theNewURL()" in bones.php -->
-									{% for url in campusSwitcher %}
-									<option>{{url}}</option>
+							<div class="header-item logo-wrapper">
+								<a href="{{site.url}}"><!--
+									--><img class="logo" src="{{bloginfo('template_url')}}/library/images/bayside-white.svg"><!--
+								--></a>
+							</div>
+							<div class="header-item campus-switcher-wrapper">
+								<select id="campus-switcher">
+									<option data-url="http://{{site.url}}">{{site.name}}</option>
+									{% for campus in campuses %}
+									<option data-url="http://{{campus.domain}}">{{campus.blogname}}</option>
 									{% endfor %}
-									</select>
-								</div>
-								<div class="col-md-3">					
-									<form role="search" method="get" class="search" action="{{site.url}}/">
-										<span class="screen-reader-text">Search for:</span>
-										<input value="{{'the_search_query'|function}}" placeholder="search..." class="form-control" type="text" name="s" title="Search for:">
-										<button type="submit" class=""><i class="fa fa-search"></i></button>
-									</form>
-								</div>
+								</select>
+								<i class="fa fa-caret-right"></i>
+							</div>
+							<div class="header-item search-wrapper">
+								<form role="search" method="get" class="search" action="{{site.url}}/">
+									<span class="screen-reader-text">Search for:</span>
+									<input value="{{'the_search_query'|function}}" placeholder="search..." class="form-control" type="text" name="s" title="Search for:">
+									<button type="submit" class=""><i class="fa fa-search"></i></button>
+								</form>
 							</div>
 						</div>
 					</div>

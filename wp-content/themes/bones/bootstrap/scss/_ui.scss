@@ -22,9 +22,7 @@ img{
 }
 
 
-#campus-map {
-	// Makes the maps prettier
-	
+#campus-map, #event-map {
 	// Fixes ruined Google Maps controls
 	img{
 		max-width: inherit;
@@ -67,7 +65,7 @@ img{
 		padding: 1em;
 		color: #fff;
 		
-		h2{
+		h2, h3{
 			margin: 0;
 		}
 		
@@ -80,6 +78,7 @@ img{
 	h2{
 		margin: 0;
 		margin-bottom: 1em;
+		line-height: .5em;
 	}
 	
 	ul{
@@ -101,6 +100,11 @@ img{
 	
 	padding-bottom: 3em;
 	
+}
+
+.events-archive-label{
+	margin: 0;
+	margin-bottom: 1em;
 }
 
 .event-header{
@@ -176,6 +180,8 @@ a{
 		margin-bottom: 1px;
 		margin-right: $grid-gutter-width;
 		text-align: center;
+		position: relative;
+		z-index: 2;
 					
 		&.image{
 			border: none;
@@ -227,6 +233,7 @@ a{
 		margin: 0px;
 		font-size: 2.2em;
 		position: relative;
+		z-index: 1;
 		a{
 			color: $brand-darker;
 			margin-right: 20px;
@@ -247,6 +254,7 @@ a{
 				background: #fff;
 				color: $brand-primary;
 				display: inline-block;
+				margin-left: 10px;
 				font-weight: 600;
 				line-height: 16px;
 				&.featured{
@@ -320,7 +328,7 @@ table.event-details{
 	table{
 		width: 100%;
 		td.campus-logo{
-			height: 500px;
+			height: 400px;
 			text-align: center;
 			vertical-align: middle;
 			img{
@@ -328,6 +336,15 @@ table.event-details{
 				max-width: 800px;
 			}
 		}
+	}
+}
+
+.campus-switcher-wrapper{
+	.fa-caret-right{
+		color: #fff;
+		position: relative;
+		margin-left: 5px;
+		margin-bottom: -2px;
 	}
 }
 
@@ -354,7 +371,7 @@ table.event-details{
 		}
 		
 		.badge-title{
-			font-weight: 800;
+			font-weight: 100;
 			text-transform: uppercase;
 			font-size: 1.1em;
 		}
@@ -409,13 +426,16 @@ footer.footer{
 		
 		h1{
 			margin: 0px;
-			display: inline
+			display: inline;
+			color: #fff;
 		}
 		
 		h4{
+			color: #fff;
 			&.in-touch{
 				font-weight: 600;
 				margin-top: 19px;
+				
 			}
 			
 			
@@ -626,17 +646,234 @@ button, a.button, input[type="submit"]{
 	
 }
 
-/*
-.img_svg{
-	display: none;
-}
-
-.svg{
-	.img_svg{
-		display: inherit;
+#event-map{
+	height: 284px;
+	margin-bottom: 10px;
+	@media (min-width: $screen-lg-desktop){
+		height: 340px;
+		width: 100%;
 	}
 	
-	.img_png{
-		display: none;	
+}
+
+.page-title{
+	color: $brand-darker;
+}
+
+.current-badge{
+	background: $brand-primary;
+	color: #fff;
+	position: absolute;
+	padding: .5em 1em;
+	top: -2.4em;
+	left: 0;
+}
+
+// MEDIA
+
+.series-archive{
+	
+	margin-bottom: 2em;
+	
+	.page-title{
+		
+		margin: 1.5em 0 2em;
+		
 	}
-} */
+	
+	.series{
+		display: inline-block;
+		color: inherit;
+		position: relative;
+		margin-bottom: 1em;
+		
+		h4{
+			font-weight: 900;
+			margin: 0;
+			color: $brand-darkish;
+		}
+		
+		.series-thumb{
+			margin-bottom: .5em;
+		}
+		
+		.series-date{
+			color: $gray-light;
+		}
+		
+		&:hover{
+			color: inherit;
+			
+		}
+		
+	}
+	
+}
+
+.series-devo-single{
+	
+	margin: 2em auto 4em;
+
+	
+	.page-title{
+		margin: 0;
+		margin-top: 1em;
+	}
+	
+	.series-desc{
+		margin-top: 1em;
+	}
+	
+	.series-date{
+		color: $gray-light;
+	}
+	
+}
+
+.single-series-header{
+	width: 100%;
+}
+
+.video-archive-single{
+	display: inline-block;
+	margin-bottom: 1.5em;
+	position: relative;
+	
+	&:hover{
+		.play-icon{
+			opacity: .5 !important;
+		}
+	}
+	
+	.date{
+		color: $gray-light;
+	}
+	
+	.thumb-wrapper{
+		margin-bottom: .5em;
+		position: relative;
+		
+		
+		
+		.video-thumb{
+		}
+		
+		.play-icon{
+			color: #fff;
+			position: absolute;
+			font-size: 50px;
+			left: 50%;
+			top:50%;
+			margin-left: -25px;
+			margin-top: -20px;
+			opacity: .7;
+			
+			@include transition(.3s opacity);
+			
+		}
+	}
+	
+	h4{
+		font-weight: 900;
+		margin: 0;
+		color: $brand-darkish;
+	}
+	
+	
+	
+}
+
+.single-video{
+	
+	margin-top: 2em;
+	margin-bottom: 2em;
+
+	h1.page-title{
+		
+		margin-bottom: 0;
+	}
+	/* 
+ */	h4{
+		color: $gray-light;
+		margin-top: .3em;
+	}
+	
+	.video-section{
+		margin-top: 2em;
+		margin-bottom: 2em;
+	}
+	
+	h3.author{
+		display: inline-block;
+		color: $brand-darker;
+		font-weight: 500;
+		margin-top: 0;
+	}
+	
+	.author_bio{
+		font-size: .9em;
+	}
+	
+	.author_twitter{
+		display: inline-block;
+		margin-left: 5px;
+	}
+	
+	.resources-section{
+		padding: 2em 0;
+		margin-bottom: 2em;
+		border-top: 1px solid $gray-lighter;
+		border-bottom: 1px solid $gray-lighter;
+		
+		h3{
+			color: $brand-darkish;
+			margin-top: 0;
+		}
+		
+		a{
+			text-decoration: underline;
+			display: inline-block;
+			margin-right: 20px;
+		}
+		
+	}
+	
+}
+
+.series-title{
+	font-weight: 900;
+	text-transform: uppercase;
+	color: $brand-primary;
+	@include transition(.3s color);
+	
+	&:hover{
+		
+		color: $brand-darkish;
+		
+	}
+	
+}
+
+.author-name{
+	color: $brand-detail !important;
+	display: block;
+}
+
+.worship-resource{
+	
+	ul.worship-set{
+		list-style-type: none;
+		margin: 0;
+		padding: 0;
+		
+		li{
+			display: inline-block;
+			width: 40%;
+		}
+	}
+
+}
+
+.gray-lighter{
+	color: $gray-lighter;
+}

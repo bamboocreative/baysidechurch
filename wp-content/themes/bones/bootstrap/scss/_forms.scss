@@ -54,7 +54,21 @@ select{
 	padding: 0.5em !important;
 	background: #fff;
 	cursor: pointer;
+	
+	&#campus-switcher{
+		
+		border: 0px;
+		background: none;
+		color: #fff;
+		padding: 0 !important;
+		-webkit-appearance: none;
+		appearance: normal;
+		
+		
+	}
+	
 }
+
 
 .gform_body{
 	ul{
@@ -214,6 +228,7 @@ form.search{
 		outline: 0;
 		border: 0;
 		height: 100%;
+		padding: inherit !important;
 		padding-left: 7px;
 		width: 40px;
 		border-left: 1px solid $gray-lighter;

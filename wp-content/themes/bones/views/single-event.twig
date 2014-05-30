@@ -14,9 +14,9 @@
 						{% endif %}
 						<h1>
 							<span class="single-event-title">{{event.title}}</span>
-							{% if event.featured %}
+							{% if event.ages %}
 							<div class="tag-wrapper">
-								<span class="event-tag">ALL AGES</span>
+								<span class="event-tag">{{event.ages}}</span>
 							</div>
 							{% endif %}
 						</h1>
@@ -26,7 +26,7 @@
 						</p>
 						<div class="event-links">
 							{% if event.registration == 'url' %}
-							<a href="{{event.registration_link}}" class="button">Register</a>
+							<a href="{{event.registration_link}}" class="button">{{event.register}}</a>
 							{% endif %}
 							{% for download in post.get_field('download_links') %}
 						    <a target="_blank" href="{{download.file}}">{{download.title}}</a>
@@ -40,24 +40,50 @@
 					</div>
 				</div>
 				<div class="row section">
+					{% if event.map %}
 					<div class="col-md-6">
-						{% if event.video %}
+						<div class="map-wrapper">
+							<div id="event-map"></div>
+							<div class="map-info">
+								{% if event.custom_location_name %}
+								{% endif %}
+								<h3>{{event.custom_location_name}}</h3>
+								<h5>{{event.map.address}}</h5>
+							</div>
+						</div>
+					</div>
+					{% endif %}
+					{% if event.video %}
+					<div class="col-md-6">
 						<div class="videoWrapper">
 							<iframe src="{{event.video}}" frameborder="0" allowfullscreen></iframe>
 						</div>
-						{% endif %}
 					</div>
-					<div class="col-md-6">
-						{% if event.video %}
-						<div class="videoWrapper">
-							<iframe src="{{event.video}}" frameborder="0" allowfullscreen></iframe>
-						</div>
-						{% endif %}
-					</div>
+					{% endif %}
 				</div>
 			</section>
 			
 		</article>
 	</div> <!-- /content-wrapper -->
-
+	{% if event.map %}
+	<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCqf_tUZR5C_oTNOML0nyR2WLLdIhvykiw&sensor=true"></script>
+	<script type="text/javascript">
+		var myLatlng = new google.maps.LatLng({{event.map.coordinates}});
+		
+		var mapOptions = {
+		  center: myLatlng,
+		  zoom: 12,
+		  scrollwheel: false,
+		  mapTypeId: google.maps.MapTypeId.ROADMAP
+		};
+		
+		var map = new google.maps.Map(document.getElementById("event-map"), mapOptions);
+		
+		var marker = new google.maps.Marker({
+		    position: myLatlng,
+		    map: map,
+		    title:"Hello World!"
+		});	
+	</script>
+	{% endif %}
 {% endblock %}

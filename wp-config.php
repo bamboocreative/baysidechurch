@@ -35,7 +35,7 @@ define('DB_COLLATE', '');
 
 define( 'WP_MEMORY_LIMIT', '96M' );
 
-define('WP_DEBUG', true);
+// define('WP_DEBUG', true);
 
 /* Multisite */
 define( 'WP_ALLOW_MULTISITE', true );
