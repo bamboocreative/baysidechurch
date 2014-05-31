@@ -5,8 +5,12 @@ Template Name: Campus Homepage
 
 // Sets up an array of badges to be passed to TWIG. Defined in bones.php. Queury has nothing to do with the page loop, so we'll leave it out.
 $badges = getEventBadges();
-$events = getEvents(array('featured'),null, 10, 'or');
+
+
+$events = getEvents(array('homepage'), null, 15, 'in');
+
 $currentDate = time();
+
 
 // Standard wordpress loop
 if (have_posts()) : while (have_posts()) : the_post();

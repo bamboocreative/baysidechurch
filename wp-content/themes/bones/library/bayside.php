@@ -5,7 +5,7 @@ Developed by: Garrett Boatman
 URL: http://bamboocreative.com/
 */
 
-function getEvents($category, $notIn, $limit, $handle){
+function getEvents($category='', $notIn=null, $limit='10', $handle='in'){
 
 	$categoryHandler = 'category__' . $handle;
 	$currentTime = time();
@@ -18,10 +18,10 @@ function getEvents($category, $notIn, $limit, $handle){
 	
 	if($category){
 		foreach($category as $cat){
-			$categories[] = get_cat_ID( $cat );
+			$categories[] = get_cat_ID($cat);
 		}
 	}
-	
+		
 	// Arguments for the events query
 	$args = array(
 		'posts_per_page' => $limit,
@@ -185,6 +185,7 @@ function get_single_event(){
 	
 	// Builds an event array with all its data.
 	$event = array(
+		
 		'id' => get_the_id(),
 		'title' => get_the_title(),
 		'content' => get_field('content'),
@@ -243,12 +244,12 @@ function get_videos($category = '', $post_type = 'weekend', $tax = 'series'){
 			// Setting up post data
 			$query->the_post();
 			
-			$weekends[] = get_single_video();
+			$videos[] = get_single_video();
 			
 		}
 	
 		// Returns an array of weekends.
-		return $weekends;
+		return $videos;
 		// Restores original Post Data
 		wp_reset_postdata();
 	}
@@ -266,8 +267,6 @@ function get_single_video(){
 		$thumb = $vimeo[0]['thumbnail_large'];
 		
 		$iframe = '<iframe src="//player.vimeo.com/video/' . get_field('video_id') . '" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>';
-		
-		
 		
 	} else{
 		$service = 'youtube';
@@ -290,11 +289,11 @@ function get_single_video(){
 	
 	$speaker = get_field('speaker');
 	
-	$weekend = array(
+	$video = array(
 	
 		'id' => get_the_id(),
 		'title' => get_the_title(),
-		'content' => get_field('content'),
+		'content' => get_the_content(),
 		'permalink' => get_permalink(),
 		'video_id' => get_field('video_id'), 
 		'thumbnail' => $thumb,
@@ -317,10 +316,10 @@ function get_single_video(){
 		
 	);
 	
-	// var_dump($weekend['worship']);
+	// var_dump($video['worship']);
 
 	
-	return $weekend;
+	return $video;
 	
 }
 

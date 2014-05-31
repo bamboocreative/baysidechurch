@@ -32,7 +32,7 @@ img{
 // EVENTS
 
 .events-outer{
-	background: lighten($gray-lighter, 0%);
+	background: #f5f5f5;
 	h2{
 		margin-top: 0px;
 		padding-bottom: 10px;
@@ -872,6 +872,34 @@ button, a.button, input[type="submit"]{
 		}
 	}
 
+}
+
+.event-archive-header{
+	
+	h1{
+		margin-top: 1em;
+	}
+	
+	h4{
+		margin: 1.5em 0 2em;
+	}
+}
+
+.give-section{
+	border-bottom: 1px solid $gray-light;
+	margin-bottom: 8em;
+	h4{
+		margin: 1em 0;
+		line-height: 1.4em;
+	}
+	
+}
+
+.button-icon{
+	position: relative;
+	display: inline-block;
+	bottom: -2px;
+	margin-left: 10px;
 }
 
 .gray-lighter{

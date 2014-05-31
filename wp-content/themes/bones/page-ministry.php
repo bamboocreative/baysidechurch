@@ -16,8 +16,20 @@ while ( have_rows('ministry_items') ) : the_row();
 			);
 		endif;
 	endif;				
-endwhile; 
-$events = getEvents(array('featured'),null, 10, 'or');
+endwhile;
+
+$cats = get_field('event_categories');
+foreach($cats as $cat){
+	$categories[] = $cat->slug;
+}
+
+$events = getEvents($categories, null, 15, 'and');
+
+foreach($eventsnonfeat as $event){
+	$events[] = $event;
+}
+
+$events = getEvents($categories, null, 10, 'in');
 wp_reset_postdata();
 
 /* Renders Twig */

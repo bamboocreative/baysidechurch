@@ -14,7 +14,10 @@ $post = new TimberPost();
 $context['post'] = $post;
 $context['event'] = $event;
 $context['form'] = $gform;
-$context['weekend'] = get_single_video();
+
+if($post->post_type == 'weekend' || $post->post_type == 'devotional'){
+	$context['weekend'] = get_single_video();
+}
 
 /* Renders Twig */
 Timber::render(array('single-' . $post->post_type . '.twig', 'single.twig'), $context);
