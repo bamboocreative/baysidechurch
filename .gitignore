@@ -4,3 +4,6 @@
 *.scssc
 .scssc
 .SCSSC
+
+BaysideChurch.pem
+credentials.csv
